@@ -1,0 +1,26 @@
+FROM dustynv/jetson-inference:r32.7.1
+
+RUN git clone https://github.com/NVIDIA-AI-IOT/jetcam
+RUN cd jetcam && python3 setup.py install
+
+RUN cd ../
+
+RUN pip3 install --no-cache-dir --verbose sparkfun-qwiic
+RUN pip3 install --no-cache-dir --verbose Adafruit_MotorHAT
+
+#
+# JupyterLab
+#
+RUN pip3 install --no-cache-dir --verbose jupyter jupyterlab && \
+    pip3 install --no-cache-dir --verbose jupyterlab_widgets
+    
+RUN jupyter lab --generate-config
+RUN python3 -c "from notebook.auth.security import set_password; set_password('nvidia', '/root/.jupyter/jupyter_notebook_config.json')"
+
+run cd /
+
+CMD /bin/bash -c "jupyter lab --ip 0.0.0.0 --port 8888 --allow-root &> /var/log/jupyter.log" & \
+    echo "allow 10 sec for JupyterLab to start @ http://$(hostname -I | cut -d' ' -f1):8888 (password nvidia)" && \
+    echo "JupterLab logging location:  /var/log/jupyter.log  (inside the container)" && \
+    /bin/bash
+
