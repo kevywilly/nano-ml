@@ -1,1 +1,1 @@
-./ml_run.sh  -c kevywilly/ml:1.0 -v ~/nano-ml/projects:/projects
+./ml_run.sh  -c kevywilly/nano-ml:1.0 -v /home/nano:/nano

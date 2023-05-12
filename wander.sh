@@ -1,0 +1,1 @@
+python3 wander.py best_model.pth

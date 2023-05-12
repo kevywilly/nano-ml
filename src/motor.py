@@ -2,6 +2,7 @@ import atexit
 from Adafruit_MotorHAT import Adafruit_MotorHAT
 import traitlets
 from traitlets.config.configurable import Configurable
+import atexit
 
 class Motor(Configurable):
 
@@ -15,6 +16,7 @@ class Motor(Configurable):
 
         self._driver = driver
         self._motor = self._driver.getMotor(channel)
+        atexit.register(self._release)
     
     @traitlets.observe('value')
     def _observe_value(self, change):
@@ -29,9 +31,9 @@ class Motor(Configurable):
         else:
             self._motor.run(Adafruit_MotorHAT.BACKWARD)
 
-    def _release(self, value):
+    def _release(self):
         """Stops motor by releasing control"""
-        self.motor.run(Adafruit_MotorHAT.RELEASE)
+        self._motor.run(Adafruit_MotorHAT.RELEASE)
 
     
             
