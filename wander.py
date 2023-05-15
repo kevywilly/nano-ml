@@ -9,8 +9,9 @@ import cv2
 import numpy as np
 import signal
 import PIL.Image
+from settings import settings
 
-torch.hub.set_dir("/nano/models")
+torch.hub.set_dir(settings.default_model.model_path)
 
 mean = torch.Tensor([0.485, 0.456, 0.406]).cuda()
 std = torch.Tensor([0.229, 0.224, 0.225]).cuda()

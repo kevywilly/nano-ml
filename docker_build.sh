@@ -1,1 +1,1 @@
-sudo docker build --network=host -t kevywilly/nano-ml:1.0 -f Dockerfile .
+sudo docker build --network=host -t kevywilly/nano-ml:1.0 --build-arg CACHEBUST=$(date +%s) -f Dockerfile .

@@ -3,14 +3,17 @@ from src.camera import Camera
 from src.robot import Robot
 from src.collector import ImageCollector
 from flask_cors import CORS
+from settings import settings
 
 app = Flask(__name__)
 CORS(app)
+cors = CORS(app, resource={
+    r"/*":{
+        "origins":"*"
+    }
+})
 
-app.image_collector = ImageCollector(
-    categories=["blocked_center","blocked_left","blocked_right","free"],
-    data_path = "datasets/flbr"
-    )
+app.image_collector = ImageCollector(model_settings=settings.default_model)
 
 app.robot: Robot = Robot()
 
@@ -39,10 +42,14 @@ def category_counts():
     
 @app.post('/api/categories/<category>/collect')
 def collect(category):
-    image = app.robot.camera.image
-    if image:
-        return {category: app.image_collector.collect(category, image)}
-    else:
+    try:
+        image = app.robot.camera.image
+        if image:
+            return {category: app.image_collector.collect(category, image)}
+        else:
+            return {category: -1}
+    except Exception as ex:
+        print(ex)
         return {category: -1}
  
 

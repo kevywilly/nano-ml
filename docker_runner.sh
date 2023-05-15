@@ -143,4 +143,4 @@ fi
 # run the container
 sudo docker run --runtime nvidia -it --rm --network host \
 	$DISPLAY_DEVICE $V4L2_DEVICES $I2C_DEVICES \
-	$VOLUMES $USER_VOLUME $CONTAINER_IMAGE $USER_COMMAND
+	$VOLUMES $USER_VOLUME $CONTAINER_IMAGE $USER_COMMAND 

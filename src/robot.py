@@ -6,6 +6,7 @@ from src.motor import Motor
 from src.display import Display
 from src.camera import Camera
 import atexit
+from settings import settings
 
 class Robot(SingletonConfigurable):
     
@@ -16,9 +17,9 @@ class Robot(SingletonConfigurable):
     
     i2c_bus = traitlets.Integer(default_value=1).tag(config=True)
     left_motor_channel = traitlets.Integer(default_value=1).tag(config=True)
-    left_motor_alpha = traitlets.Float(default_value=1.0).tag(config=True)
+    left_motor_alpha = traitlets.Float(default_value=settings.left_motor_alpha).tag(config=True)
     right_motor_channel = traitlets.Integer(default_value=2).tag(config=True)
-    right_motor_alpha = traitlets.Float(default_value=1.0).tag(config=True)
+    right_motor_alpha = traitlets.Float(default_value=settings.right_motor_alpha).tag(config=True)
 
     def log(self, text):
         print(text)

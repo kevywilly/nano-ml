@@ -3,6 +3,7 @@ from Adafruit_MotorHAT import Adafruit_MotorHAT
 import traitlets
 from traitlets.config.configurable import Configurable
 import atexit
+from settings import settings
 
 class Motor(Configurable):
 

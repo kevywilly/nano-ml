@@ -6,8 +6,9 @@ from torchvision import transforms
 from typing import List
 import PIL
 from categories import _IMAGENET_CATEGORIES
+from settings import settings
 
-torch.hub.set_dir("/ml-data/models")
+torch.hub.set_dir(settings.default_model.model_path)
 
 # Define transforms to preprocess the image
 transform = transforms.Compose([

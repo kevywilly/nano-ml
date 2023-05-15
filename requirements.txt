@@ -1,0 +1,5 @@
+pytorch
+Adafruit_MotorHAT 
+Adafruit_SSD1306
+flask
+flask_cors
