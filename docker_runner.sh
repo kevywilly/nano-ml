@@ -133,6 +133,11 @@ if [ -a "/tmp/argus_socket" ]; then
     VOLUMES="$VOLUMES -v /tmp/argus_socket:/tmp/argus_socket"
 fi
 
+# DATA
+[ -d /ml_data ] || sudo mkdir /ml_data
+VOLUMES="$VOLUMES -v /ml_data:/ml_data"
+
+
 #echo "CONTAINER_IMAGE: $CONTAINER_IMAGE"
 #echo "USER_VOLUME:     $USER_VOLUME"
 #echo "USER_COMMAND:    '$USER_COMMAND'"

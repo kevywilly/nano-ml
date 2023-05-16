@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 from flask import Flask, render_template, Response, jsonify
 from src.camera import Camera
 from src.robot import Robot

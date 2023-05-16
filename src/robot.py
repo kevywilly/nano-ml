@@ -85,3 +85,4 @@ class Robot(SingletonConfigurable):
             self.right(s)
         else:
             self.stop()
+

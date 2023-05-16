@@ -29,6 +29,9 @@ class Camera(SingletonConfigurable):
         if self.camera:
             return
         print("Starting Camera")
+        print(self.capture_width)
+        print(self.capture_height)
+        print(self.fps)
         self.camera = CSICamera(
             width=self.width, 
             height=self.height, 

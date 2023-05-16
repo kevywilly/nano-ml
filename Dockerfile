@@ -22,9 +22,11 @@ COPY nginx.conf /etc/nginx/sites-available/default
 
 ARG CACHEBUST=1
 
+COPY . /nano_ml
+
 RUN git clone https://github.com/kevywilly/nano-control 
 RUN cp -r nano-control/build /var/www/build
 RUN rm -rf nano-control
 
-CMD /bin/bash -c "/etc/init.d/nginx start" && /bin/bash -c "cd nano/nano-ml && python3 api.py" /bin/bash
+#CMD /bin/bash -c "/etc/init.d/nginx start" && /bin/bash -c "cd nano/nano-ml && ./api.py" /bin/bash
 

@@ -14,10 +14,13 @@ class ModelSettings(BaseModel):
     model: Optional[Any]
     classifier: Optional[Any]
 
+    def num_categories(self):
+        return len(self.categories)
+    
     def load_model(self, *args, **kwargs):
         if self.model is None:
             if self.model_name == "alexnet":
-                self.model = torchvision.models.alextnet(*args, **kwargs)
+                self.model = torchvision.models.alexnet(*args, **kwargs)
             if self.model_name == "resnet18":
                 self.model = torchvision.models.resnet18(*args, **kwargs)
         
@@ -27,14 +30,28 @@ class ModelSettings(BaseModel):
 class AppSettings(BaseSettings):
 
     left_motor_alpha: float = 1.0
-    right_motor_alpha: float = 1.075
+    right_motor_alpha: float = 1.01
+
+    data_root: str = "/ml_data"
+    datasets_root: str = f"{data_root}/datasets"
+    models_root: str = f"{data_root}/models"
+    best_models_root: str =  f"{models_root}/best"
+
 
     default_model: ModelSettings = ModelSettings(
+        model_name="resnet18",
+        model_path = models_root,
+        data_path=f"{datasets_root}/fb3",
+        best_model_path = f"{best_models_root}/fb3.pth",
+        categories = ["blocked","blocked_left","blocked_right","free"]
+    )
+
+    simple_model: ModelSettings = ModelSettings(
         model_name="alexnet",
-        model_path = "/ml-data/models",
-        data_path="datasets/flbr",
-        best_model_file = "ml-data/models/best/flbr.pth"
-        categories = ["blocked_center","blocked_left","blocked_right","free"]
+        model_path = models_root,
+        data_path=f"{datasets_root}/fb",
+        best_model_path = f"{best_models_root}/fb.pth",
+        categories = ["blocked","free"]
     )
 
 settings = AppSettings()
