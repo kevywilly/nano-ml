@@ -7,28 +7,31 @@ import torch.nn.functional as F
 import numpy as np
 import signal
 import PIL.Image
-from settings import settings, ModelSettings
+from config import TrainingConfig, MODELS_ROOT
+from settings import settings
 
-torch.hub.set_dir(settings.default_model.model_path)
+torch.hub.set_dir(MODELS_ROOT)
 
-mean = torch.Tensor([0.485, 0.456, 0.406]).cuda()
-std = torch.Tensor([0.229, 0.224, 0.225]).cuda()
+SPEED_DRIVE = settings.robot_drive_speed
+SPEED_TURN = settings.robot_turn_speed
 
 class Wanderer(traitlets.HasTraits):
 
-    model_settings = traitlets.Instance(ModelSettings)
+    training_config = traitlets.Instance(TrainingConfig)
     robot = traitlets.Instance(Robot)
 
-    def __init__(self, robot: Robot, model_settings: ModelSettings, *args, **kwargs):
+    def __init__(self, robot: Robot, training_config: TrainingConfig, *args, **kwargs):
         super(Wanderer,self).__init__(*args, **kwargs)
         self.robot = robot
-        self.model_settings = model_settings
+        self.training_config = training_config
         self.mean = 255.0 * np.array([0.485, 0.456, 0.406])
         self.stdev = 255.0 * np.array([0.229, 0.224, 0.225])
         self.normalize = torchvision.transforms.Normalize(self.mean, self.stdev)
         self.robot.log("Loading wander app...")
         self.robot.log("Loading collision model...")
-        self.model = model_settings.load_model(pretrained=False)
+        self.model = training_config.load_model(pretrained=False)
+        self.dir = 0
+
     
     def _preprocess(self, camera_value):
         x = camera_value
@@ -40,58 +43,56 @@ class Wanderer(traitlets.HasTraits):
         x = x[None, ...]
         return x
     
+    def _handle_obstacle3d(self, y):
+        
+        [forward,left,right] = [float(x) for x in y.flatten()[:3]]
+
+        print(left,right,forward)
+        
+        if (forward) > 0.5:
+            self.dir = 0
+            self.robot.forward(SPEED_DRIVE)
+        elif left > right and dir == 0:
+            self.dir = -1
+            self.robot.left(SPEED_TURN)
+        elif dir == 0:
+            self.dir = 1
+            self.robot.right(SPEED_TURN)
+
+
+    def _handle_obstacle2d(self, y):
+        prob_blocked = float(y.flatten()[0])
+        if prob_blocked < 0.5:
+            self.robot.forward(SPEED_DRIVE)
+        else:
+            self.robot.left(SPEED_TURN)
+
     def _update(self, change):
         x = change['new'] 
         x = self._preprocess(x)
         y = self.model(x)
         y = F.softmax(y, dim=1)
 
-        ff = """
-        prob_blocked = float(y.flatten()[0])
-
-        if prob_blocked < 0.5:
-            self.robot.forward(0.2)
+        if self.training_config.name == "obstacle3d":
+            self._handle_obstacle3d(y)
         else:
-            self.robot.left(0.2)
-        """
-        flat = y.flatten()
-        prob_blocked_center = float(flat[0])
-        prob_blocked_left = float(flat[1])
-        prob_blocked_right = float(flat[2])
-        prob_free = float(flat[3])
-
-        print(prob_blocked_center, prob_blocked_left, prob_blocked_right, prob_free)
-
-        if prob_blocked_center >= 0.5:
-            if prob_blocked_left <= prob_blocked_right:
-                self.robot.log("turn left")
-                self.robot.left(0.2)
-            else:
-                self.robot.log("turn right")
-                self.robot.right(0.2)
-        elif prob_blocked_right >= 0.5:
-            self.robot.log("turn left")
-            self.robot.left(0.2)
-        elif prob_blocked_left >= 0.5:
-            self.robot.log("turn right")
-            self.robot.right(0.2)
-        else:
-            self.robot.log("forward")
-            self.robot.forward(0.2)
-       
+            self._handle_obstacle2d(y)
 
     def start(self):
         self.device = torch.device('cuda')
         
         self.robot.log("Loading model...")
+
+        num_categories = len(self.training_config.categories)
         
         # create model
-        if self.model_settings.model_name == "alexnet":
-            self.model.classifier[6] = torch.nn.Linear(self.model.classifier[6].in_features, self.model_settings.num_categories())
-        elif self.model_settings.model_name == "resnet18":
-            self.model.fc = torch.nn.Linear(512, self.model_settings.num_categories())
+        if self.training_config.model_name == "alexnet":
+            self.model.classifier[6] = torch.nn.Linear(self.model.classifier[6].in_features, num_categories)
+        elif self.training_config.model_name == "resnet18":
+            self.model.fc = torch.nn.Linear(512, num_categories)
+            self.model.eval().half()
 
-        self.model.load_state_dict(torch.load(self.model_settings.best_model_path))
+        self.model.load_state_dict(torch.load(self.training_config.get_best_model_path()))
         self.model = self.model.to(self.device)
     
         self.robot.log("Model loaded...")

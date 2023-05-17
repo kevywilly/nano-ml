@@ -2,50 +2,44 @@
 import torch
 import torch.optim as optim
 import torch.nn.functional as F
-import torchvision
 import torchvision.datasets as datasets
 import torchvision.models as models
 import torchvision.transforms as transforms
-from settings import settings as app_settings
-from settings import ModelSettings
-from src.collector import ImageCollector
+from config import TrainingConfig, MODELS_ROOT
 import traitlets
 
-torch.hub.set_dir(app_settings.default_model.model_path)
+torch.hub.set_dir(MODELS_ROOT)
 
 
 class Trainer(traitlets.HasTraits):
 
-    model_settings = traitlets.Instance(ModelSettings)
+    training_config = traitlets.Instance(TrainingConfig)
 
-    def __init__(self, model_settings: ModelSettings, retrain = False):
-        self.model_settings = model_settings
+    def __init__(self, training_config: TrainingConfig, retrain = False):
+        self.training_config = training_config
         self.retrain = retrain
-        self.model = model_settings.load_model(pretrained=(not retrain))
+        self.model = training_config.load_model(pretrained=(not retrain))
 
         
 
     def train(self):
 
-        image_collector = ImageCollector(app_settings.default_model)
-
         print("loading datasets...")
 
         dataset = datasets.ImageFolder(
-        self.model_settings.data_path,
+        self.training_config.get_data_path(),
         transforms.Compose([
             transforms.ColorJitter(0.1, 0.1, 0.1, 0.1),
             transforms.Resize((224, 224)),
             transforms.ToTensor(),
             transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ]))
-
-        counts = image_collector.counts
     
-        data_set_len = int(sum(counts.values())/2)
+        data_set_len = len(dataset)
+        test_len = int(data_set_len/3)
         print(f"found {data_set_len} datapoints.")
             
-        train_dataset, test_dataset = torch.utils.data.random_split(dataset, [len(dataset) - data_set_len, data_set_len])
+        train_dataset, test_dataset = torch.utils.data.random_split(dataset, [len(dataset) - test_len, test_len])
 
         train_loader = torch.utils.data.DataLoader(
             train_dataset,
@@ -61,28 +55,32 @@ class Trainer(traitlets.HasTraits):
             num_workers=0
         )
 
-        print(f"loading model...{self.model_settings.model_name}")
+        print(f"loading model...{self.training_config.model_name}")
 
-        num_cats = len(self.model_settings.categories)
+        num_cats = len(self.training_config.categories)
 
-        if self.model_settings.model_name == "alexnet":
+
+        print(f"Categories: {num_cats}")
+        if self.training_config.model_name == "alexnet":
             self.model.classifier[6] = torch.nn.Linear(self.model.classifier[6].in_features, num_cats)
-        elif self.model_settings.model_name == "resnet18":
+        elif self.training_config.model_name == "resnet18":
             self.model.fc = torch.nn.Linear(512, num_cats)
 
         print("training model...")
 
+        BEST_MODEL_PATH = self.training_config.get_best_model_path()
+        NUM_EPOCHS = 30
+        best_accuracy = 0.0
+        
+        print(f"best model path: {BEST_MODEL_PATH}")
+
         if self.retrain:
-            self.model.load_state_dict(torch.load(self.model_settings.best_model_path))
+            self.model.load_state_dict(torch.load(BEST_MODEL_PATH))
 
         device = torch.device('cuda')
         self.model = self.model.to(device)
 
-        NUM_EPOCHS = 60
-        BEST_MODEL_PATH = self.model_settings.best_model_path
-        best_accuracy = 0.0
-
-        optimizer = optim.SGD(self.model.parameters(), lr=0.001, momentum=0.6)
+        optimizer = optim.SGD(self.model.parameters(), lr=0.001, momentum=0.9)
 
         for epoch in range(NUM_EPOCHS):
             

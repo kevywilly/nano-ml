@@ -7,8 +7,9 @@ from typing import List
 import PIL
 from categories import _IMAGENET_CATEGORIES
 from settings import settings
+from config import TrainingConfig, MODELS_ROOT
 
-torch.hub.set_dir(settings.default_model.model_path)
+torch.hub.set_dir(MODELS_ROOT)
 
 # Define transforms to preprocess the image
 transform = transforms.Compose([

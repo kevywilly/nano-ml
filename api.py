@@ -15,7 +15,7 @@ cors = CORS(app, resource={
     }
 })
 
-app.image_collector = ImageCollector(model_settings=settings.default_model)
+app.image_collector = ImageCollector(training_config=settings.default_model)
 
 app.robot: Robot = Robot()
 

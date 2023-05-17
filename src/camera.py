@@ -28,10 +28,9 @@ class Camera(SingletonConfigurable):
     def start(self):
         if self.camera:
             return
-        print("Starting Camera")
-        print(self.capture_width)
-        print(self.capture_height)
-        print(self.fps)
+        
+        print(f"Starting Camera")
+      
         self.camera = CSICamera(
             width=self.width, 
             height=self.height, 
@@ -40,11 +39,17 @@ class Camera(SingletonConfigurable):
             capture_height=self.capture_height, 
             capture_fps=30
             )
-        self.camera.running = True
+        
+        
+       
         self.image = Image()
         
         traitlets.dlink((self.camera, 'value'), (self, 'value'))
         traitlets.dlink((self.camera, 'value'), (self.image, 'value'), transform=bgr8_to_jpeg)
+
+        self.camera.read()
+        
+        self.camera.running = True
 
     def stop(self):
         print("\nReleasing camera...\n")

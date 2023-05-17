@@ -1,9 +1,9 @@
 #!/usr/bin/python3
 from src.wanderer import Wanderer
 from src.robot import Robot
-from settings import settings
+from config import TrainingConfig, Obstacle2dConfig, Obstacle3dConfig
 
 robot = Robot()
 
-application = Wanderer(robot=robot, model_settings = settings.default_model)
+application = Wanderer(robot=robot, training_config = Obstacle3dConfig)
 application.start()
