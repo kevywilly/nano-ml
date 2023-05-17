@@ -53,8 +53,5 @@ class Camera(SingletonConfigurable):
 
     def stop(self):
         print("\nReleasing camera...\n")
-        if self._camera_link:
-            self._camera_link.unlink()
-
         self.camera.running = False
         self.camera.cap.release()

@@ -36,6 +36,12 @@ Obstacle3dConfig = TrainingConfig(
         categories = ["turn_left","turn_right","forward"]
     )
 
+Obstacle3dV2Config = TrainingConfig(
+        name="obstacle3dV2",
+        model_name="alexnet",
+        categories = ["turn_left","turn_right","forward"]
+    )
+
 Obstacle2dConfig: TrainingConfig = TrainingConfig(
         name="obstacle2d",
         model_name="alexnet",

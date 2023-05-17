@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from typing import Optional, Any
 import torchvision
 from config import TrainingConfig
-from config import Obstacle2dConfig, Obstacle3dConfig, Navigate2dConfig
+from config import Obstacle2dConfig, Obstacle3dConfig, Navigate2dConfig, Obstacle3dV2Config
 
 class AppSettings(BaseSettings):
 
@@ -14,6 +14,6 @@ class AppSettings(BaseSettings):
     robot_drive_speed: float = 0.25
     robot_turn_speed: float = 0.18
 
-    default_model: TrainingConfig = Obstacle3dConfig
+    default_model: TrainingConfig = Obstacle3dV2Config
 
 settings = AppSettings()

@@ -45,18 +45,24 @@ class Wanderer(traitlets.HasTraits):
     
     def _handle_obstacle3d(self, y):
         
-        [forward,left,right] = [float(x) for x in y.flatten()[:3]]
+        forward = float(y.flatten()[0])
+        left = float(y.flatten()[1])
+        right = float(y.flatten()[2])
 
-        print(left,right,forward)
+        print(f"f: {forward}, l: {left}, r: {right}")
         
-        if (forward) > 0.5:
+        if (left + right) < 0.5:
             self.dir = 0
+        elif left > right:
+            self.dir = -1 if self.dir == 0 else self.dir
+        else:
+            self.dir = 1 if self.dir == 0 else self.dir
+
+        if self.dir == 0:
             self.robot.forward(SPEED_DRIVE)
-        elif left > right and dir == 0:
-            self.dir = -1
-            self.robot.left(SPEED_TURN)
-        elif dir == 0:
-            self.dir = 1
+        elif self.dir == -1:
+             self.robot.left(SPEED_TURN)
+        else:
             self.robot.right(SPEED_TURN)
 
 
@@ -99,6 +105,8 @@ class Wanderer(traitlets.HasTraits):
         
         self.robot.log('Running...')
         self.robot.camera.observe(self._update, names='value')
+
+        self._update({"new": self.robot.camera.value})
         
         def kill(sig, frame):
             self.robot.log('Shutting down...')
