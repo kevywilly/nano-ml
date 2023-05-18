@@ -16,18 +16,18 @@ cors = CORS(app, resource={
     }
 })
 
-SPEED_DRIVE = settings.robot_drive_speed
-SPEED_TURN = settings.robot_turn_speed
-
 app.image_collector = ImageCollector.instance(config=settings.default_model)
 app.drive_model = DriveModel.instance(config=settings.default_model)
 app.autodrive = False
 app.robot: Robot = Robot()
 app.dir = 0
+app.speed = settings.robot_drive_speed
+app.turn_speed = settings.robot_turn_speed
 
 
 def _autodrive(change):
     if not app.autodrive:
+        app.dir = 0
         return
     
     y = app.drive_model.predict(change["new"])
@@ -45,11 +45,11 @@ def _autodrive(change):
         app.dir = 1 if app.dir == 0 else app.dir
 
     if app.dir == 0:
-        app.robot.forward(SPEED_DRIVE)
+        app.robot.forward(app.speed)
     elif app.dir == -1:
-            app.robot.left(SPEED_TURN)
+            app.robot.left(app.turn_speed)
     else:
-        app.robot.right(SPEED_TURN)
+        app.robot.right(app.turn_speed)
 
 def _get_stream():  
     while True:
@@ -72,14 +72,16 @@ def toggle_autodrive():
     app.autodrive = not app.autodrive
     
     if(app.autodrive):
+        app.robot.stop
+        app.dir = 0
         app.robot.camera.observe(_autodrive, names='value')
     else:
         try:
             app.robot.camera.unobserve(_autodrive)
         except Exception as ex:
             print(ex)
-
-    app.robot.stop()
+        finally:
+            app.robot.stop()
 
     return jsonify({"autodrive": app.autodrive})
 
@@ -110,6 +112,10 @@ def stream():
 
 @app.route('/api/drive/<cmd>/<speed>')
 def drive(cmd, speed):
+    
+    app.speed = speed
+    app.turn_speed = int(speed*0.72)
+
     app.robot.drive(cmd, int(speed))
     return {
         "cmd": cmd,
