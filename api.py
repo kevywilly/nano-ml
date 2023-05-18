@@ -4,6 +4,7 @@ from flask import Flask, render_template, Response, jsonify
 from src.camera import Camera
 from src.robot import Robot
 from src.collector import ImageCollector
+from src.drive_model import DriveModel
 from flask_cors import CORS
 from settings import settings
 
@@ -15,9 +16,40 @@ cors = CORS(app, resource={
     }
 })
 
-app.image_collector = ImageCollector(training_config=settings.default_model)
+SPEED_DRIVE = settings.robot_drive_speed
+SPEED_TURN = settings.robot_turn_speed
 
+app.image_collector = ImageCollector.instance(config=settings.default_model)
+app.drive_model = DriveModel.instance(config=settings.default_model)
+app.autodrive = False
 app.robot: Robot = Robot()
+app.dir = 0
+
+
+def _autodrive(change):
+    if not app.autodrive:
+        return
+    
+    y = app.drive_model.predict(change["new"])
+    forward = float(y.flatten()[0])
+    left = float(y.flatten()[1])
+    right = float(y.flatten()[2])
+
+    print(f"f: {forward}, l: {left}, r: {right}")
+    
+    if (left + right) < 0.5:
+        app.dir = 0
+    elif left > right:
+        app.dir = -1 if app.dir == 0 else app.dir
+    else:
+        app.dir = 1 if app.dir == 0 else app.dir
+
+    if app.dir == 0:
+        app.robot.forward(SPEED_DRIVE)
+    elif app.dir == -1:
+            app.robot.left(SPEED_TURN)
+    else:
+        app.robot.right(SPEED_TURN)
 
 def _get_stream():  
     while True:
@@ -33,6 +65,23 @@ def _get_stream():
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/api/autodrive')
+def toggle_autodrive():
+    
+    app.autodrive = not app.autodrive
+    
+    if(app.autodrive):
+        app.robot.camera.observe(_autodrive, names='value')
+    else:
+        try:
+            app.robot.camera.unobserve(_autodrive)
+        except Exception as ex:
+            print(ex)
+
+    app.robot.stop()
+
+    return jsonify({"autodrive": app.autodrive})
 
 @app.get('/api/categories')
 def categories():

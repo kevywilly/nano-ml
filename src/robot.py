@@ -34,7 +34,7 @@ class Robot(SingletonConfigurable):
         self.left_motor = Motor(self.motor_driver, channel=self.left_motor_channel, alpha=self.left_motor_alpha)
         self.right_motor = Motor(self.motor_driver, channel=self.right_motor_channel, alpha=self.right_motor_alpha)
         self.log("Motors started...")
-        self.camera = Camera()
+        self.camera = Camera.instance()
         self.camera.start()
         self.log("Camera started ...")
 

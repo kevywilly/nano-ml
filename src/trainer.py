@@ -7,27 +7,29 @@ import torchvision.models as models
 import torchvision.transforms as transforms
 from config import TrainingConfig, MODELS_ROOT
 import traitlets
+from traitlets.config import SingletonConfigurable
+from settings import settings
 
 torch.hub.set_dir(MODELS_ROOT)
 
 
-class Trainer(traitlets.HasTraits):
+class Trainer(SingletonConfigurable):
 
-    training_config = traitlets.Instance(TrainingConfig)
+    config = traitlets.Instance(TrainingConfig, default_value = settings.default_model).tag(config=True)
+    epochs = traitlets.Int(default_value=settings.default_epochs).tag(config=True)
+    retrain = traitlets.Bool(default_value=False).tag(config=True)
 
-    def __init__(self, training_config: TrainingConfig, retrain = False):
-        self.training_config = training_config
-        self.retrain = retrain
-        self.model = training_config.load_model(pretrained=(not retrain))
-
-        
+    def __init__(self, *args, **kwargs):
+        super(Trainer,self).__init__(*args, **kwargs)
+        print(f"Trainer loaded: {self.config}, epochs: {self.epochs}, retrain: {self.retrain}")
+        self.model = self.config.load_model(pretrained=(not self.retrain))
 
     def train(self):
 
         print("loading datasets...")
 
         dataset = datasets.ImageFolder(
-        self.training_config.get_data_path(),
+        self.config.get_data_path(),
         transforms.Compose([
             transforms.ColorJitter(0.1, 0.1, 0.1, 0.1),
             transforms.Resize((224, 224)),
@@ -55,21 +57,21 @@ class Trainer(traitlets.HasTraits):
             num_workers=0
         )
 
-        print(f"loading model...{self.training_config.model_name}")
+        print(f"loading model...{self.config.model_name}")
 
-        num_cats = len(self.training_config.categories)
+        num_cats = len(self.config.categories)
 
 
         print(f"Categories: {num_cats}")
-        if self.training_config.model_name == "alexnet":
+        if self.config.model_name == "alexnet":
             self.model.classifier[6] = torch.nn.Linear(self.model.classifier[6].in_features, num_cats)
-        elif self.training_config.model_name == "resnet18":
+        elif self.config.model_name == "resnet18":
             self.model.fc = torch.nn.Linear(512, num_cats)
 
         print("training model...")
 
-        BEST_MODEL_PATH = self.training_config.get_best_model_path()
-        NUM_EPOCHS = 30
+        BEST_MODEL_PATH = self.config.get_best_model_path()
+        NUM_EPOCHS = self.epochs
         best_accuracy = 0.0
         
         print(f"best model path: {BEST_MODEL_PATH}")

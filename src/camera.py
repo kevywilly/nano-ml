@@ -20,6 +20,7 @@ class Camera(SingletonConfigurable):
     capture_height = traitlets.Integer(default_value=616).tag(config=True)
 
     def __init__(self, *args, **kwargs):
+        super(Camera,self).__init__(*args, **kwargs)
         self.value = np.empty((self.height, self.width, 3), dtype=np.uint8)
         self.camera_link = None
         super(Camera, self).__init__(*args, **kwargs)

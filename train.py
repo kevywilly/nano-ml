@@ -3,7 +3,15 @@
 from src.trainer import Trainer
 from settings import settings
 from config import Navigate2dConfig,Obstacle2dConfig, Obstacle3dConfig
+import os
 
-trainer = Trainer(training_config=settings.default_model, retrain=settings.retrain_model)
+
+retrain = os.path.exists(settings.default_model.get_best_model_path())
+
+trainer = Trainer.instance(
+    config=settings.default_model,
+    epochs=10,
+    retrain=retrain
+)
 
 trainer.train()

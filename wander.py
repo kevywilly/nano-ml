@@ -6,5 +6,5 @@ from settings import settings
 
 robot = Robot()
 
-application = Wanderer(robot=robot, training_config=settings.default_model)
+application = Wanderer.instance(robot=robot)
 application.start()
