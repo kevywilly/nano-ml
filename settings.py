@@ -15,5 +15,6 @@ class AppSettings(BaseSettings):
     robot_turn_speed: float = 0.18
 
     default_model: TrainingConfig = Obstacle3dV2Config
+    retrain_model: bool = True
 
 settings = AppSettings()

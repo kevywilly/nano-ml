@@ -37,6 +37,8 @@ class Robot(SingletonConfigurable):
         self.camera = Camera()
         self.camera.start()
         self.log("Camera started ...")
+
+        atexit.register(self.stop)
         
     
     def get_image_capture(self):

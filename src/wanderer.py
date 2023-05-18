@@ -9,6 +9,7 @@ import signal
 import PIL.Image
 from config import TrainingConfig, MODELS_ROOT
 from settings import settings
+import sys
 
 torch.hub.set_dir(MODELS_ROOT)
 
@@ -79,7 +80,7 @@ class Wanderer(traitlets.HasTraits):
         y = self.model(x)
         y = F.softmax(y, dim=1)
 
-        if self.training_config.name == "obstacle3d":
+        if self.training_config.name.startswith("obstacle3d"):
             self._handle_obstacle3d(y)
         else:
             self._handle_obstacle2d(y)
@@ -110,8 +111,8 @@ class Wanderer(traitlets.HasTraits):
         
         def kill(sig, frame):
             self.robot.log('Shutting down...')
-            self.robot.camera.stop()
-            
+            sys.exit("done") 
+
         signal.signal(signal.SIGINT, kill)
         
         # self.camera.thread.join()
