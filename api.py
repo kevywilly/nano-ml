@@ -113,8 +113,8 @@ def stream():
 @app.route('/api/drive/<cmd>/<speed>')
 def drive(cmd, speed):
     
-    app.speed = speed
-    app.turn_speed = int(speed*0.72)
+    app.speed = float(speed)/100.0
+    app.turn_speed = float(0.72*float(speed)/100.0)
 
     app.robot.drive(cmd, int(speed))
     return {
