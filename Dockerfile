@@ -1,5 +1,8 @@
 FROM nvcr.io/nvidia/l4t-ml:r32.7.1-py3
 
+
+
+
 RUN git clone https://github.com/NVIDIA-AI-IOT/jetcam
 RUN cd jetcam && python3 setup.py install
 RUN cd ../
