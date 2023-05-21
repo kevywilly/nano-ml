@@ -9,7 +9,7 @@ from config import Obstacle2dConfig, Obstacle3dConfig, Navigate2dConfig, Obstacl
 class AppSettings(BaseSettings):
 
     left_motor_alpha: float = 1.0
-    right_motor_alpha: float = 1.0
+    right_motor_alpha: float = 1.02
 
     robot_drive_speed: float = 0.25
     robot_turn_speed: float = 0.18
