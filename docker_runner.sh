@@ -138,14 +138,15 @@ fi
 VOLUMES="$VOLUMES -v /ml_data:/ml_data"
 
 
-#echo "CONTAINER_IMAGE: $CONTAINER_IMAGE"
-#echo "USER_VOLUME:     $USER_VOLUME"
-#echo "USER_COMMAND:    '$USER_COMMAND'"
-#echo "V4L2_DEVICES:    $V4L2_DEVICES"
-#echo "DISPLAY_DEVICE:  $DISPLAY_DEVICE"
-#echo "I2C_DEVICES:     $I2C_DEVICES"
+echo "CONTAINER_IMAGE: $CONTAINER_IMAGE"
+echo "USER_VOLUME:     $USER_VOLUME"
+echo "USER_COMMAND:    '$USER_COMMAND'"
+echo "V4L2_DEVICES:    $V4L2_DEVICES"
+echo "DISPLAY_DEVICE:  $DISPLAY_DEVICE"
+echo "I2C_DEVICES:     $I2C_DEVICES"
+echo "VOLUMES:" $VOLUMES
 
 # run the container
-sudo docker run --runtime nvidia -it --rm --network host \
+echo "sudo docker run --runtime nvidia -it --rm --network host \
 	$DISPLAY_DEVICE $V4L2_DEVICES $I2C_DEVICES \
-	$VOLUMES $USER_VOLUME $CONTAINER_IMAGE $USER_COMMAND 
+	$VOLUMES $USER_VOLUME $CONTAINER_IMAGE $USER_COMMAND"

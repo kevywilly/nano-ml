@@ -15,8 +15,8 @@ class AppSettings(BaseSettings):
     m3_alpha: float = 1.0
     m4_alpha: float = 1.0
 
-    robot_drive_speed: float = 0.25
-    robot_turn_speed: float = 0.18
+    robot_drive_speed: float = 0.55
+    robot_turn_speed: float = 0.45
 
     default_model: TrainingConfig = Obstacle3dV2Config
     retrain_model: bool = True
