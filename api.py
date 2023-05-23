@@ -19,7 +19,7 @@ cors = CORS(app, resource={
 app.image_collector = ImageCollector.instance(config=settings.default_model)
 app.drive_model = DriveModel.instance(config=settings.default_model)
 app.autodrive = False
-app.robot: Robot = Robot()
+app.robot: Robot = Robot(mode=2)
 app.dir = 0
 app.speed = settings.robot_drive_speed
 app.turn_speed = settings.robot_turn_speed
