@@ -39,10 +39,10 @@ def _autodrive(change):
     
     if (left + right) < 0.5:
         app.dir = 0
-    elif left > right:
-        app.dir = -1 if app.dir == 0 else app.dir
-    else:
-        app.dir = 1 if app.dir == 0 else app.dir
+    elif (left > right and app.dir == 0):
+        app.dir = -1
+    elif app.dir == 0:
+        app.dir = 1
 
     if app.dir == 0:
         app.robot.forward(app.speed)
@@ -114,7 +114,7 @@ def stream():
 def drive(cmd, speed):
     
     app.speed = float(speed)/100.0
-    app.turn_speed = float(0.72*float(speed)/100.0)
+    app.turn_speed = app.speed #float(0.72*float(speed)/100.0)
 
     app.robot.drive(cmd, int(speed))
     return {

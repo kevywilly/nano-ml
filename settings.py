@@ -26,6 +26,6 @@ class AppSettings(BaseSettings):
 
     default_model: TrainingConfig = Obstacle3dV2Config
     retrain_model: bool = True
-    default_epochs: int = 10
+    default_epochs: int = 30
 
 settings = AppSettings()
