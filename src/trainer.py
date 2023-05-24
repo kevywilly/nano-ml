@@ -9,6 +9,7 @@ from config import TrainingConfig, MODELS_ROOT
 import traitlets
 from traitlets.config import SingletonConfigurable
 from settings import settings
+import atexit
 
 torch.hub.set_dir(MODELS_ROOT)
 
@@ -23,6 +24,10 @@ class Trainer(SingletonConfigurable):
         super(Trainer,self).__init__(*args, **kwargs)
         print(f"Trainer loaded: {self.config}, epochs: {self.epochs}, retrain: {self.retrain}")
         self.model = self.config.load_model(pretrained=(not self.retrain))
+        atexit.register(self.clear_cuda)
+
+    def clear_cuda(self):
+        torch.cuda.empty_cache()
 
     def train(self):
 

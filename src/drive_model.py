@@ -8,6 +8,7 @@ import torch.nn.functional as F
 import numpy as np
 from config import TrainingConfig, MODELS_ROOT
 from settings import settings
+import atexit
 
 torch.hub.set_dir(MODELS_ROOT)
 
@@ -24,6 +25,10 @@ class DriveModel(SingletonConfigurable):
         self.stdev = 255.0 * np.array([0.229, 0.224, 0.225])
         self.normalize = torchvision.transforms.Normalize(self.mean, self.stdev)
         self._load_model()
+        atexit.register(self.clear_cuda)
+
+    def clear_cuda(self):
+        torch.cuda.empty_cache()
        
     def _load_model(self):
         print("preparing model...")

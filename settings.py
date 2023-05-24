@@ -4,7 +4,13 @@ from pydantic import BaseModel
 from typing import Optional, Any
 import torchvision
 from config import TrainingConfig
-from config import Obstacle2dConfig, Obstacle3dConfig, Navigate2dConfig, Obstacle3dV2Config
+from config import (
+    Obstacle2dConfig, 
+    Obstacle3dConfig, 
+    Navigate2dConfig, 
+    Obstacle3dV2Config, 
+    Obstacle5dConfig
+)
 
 class AppSettings(BaseSettings):
 

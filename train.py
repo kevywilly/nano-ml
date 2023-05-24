@@ -10,7 +10,7 @@ retrain = os.path.exists(settings.default_model.get_best_model_path())
 
 trainer = Trainer.instance(
     config=settings.default_model,
-    epochs=10,
+    epochs=settings.default_epochs,
     retrain=retrain
 )
 

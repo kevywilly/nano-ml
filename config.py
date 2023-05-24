@@ -53,3 +53,9 @@ Navigate2dConfig: TrainingConfig = TrainingConfig(
         model_name="alexnet",
         categories = ["turn_left","turn_right"]
     )
+
+Obstacle5dConfig = TrainingConfig(
+        name="obstacle5d",
+        model_name="alexnet",
+        categories = ["forward","slide_left","slide_right","turn_left","turn_right"]
+    )
