@@ -116,10 +116,10 @@ class Robot(SingletonConfigurable):
         for motor in self.motors:
             motor.value = 0
 
-    def drive(self, cmd: str, speed: int):
-        c = cmd.lower()
-        s = float(max(min(speed,100),0))/100.0
-
+    def drive(self, cmd: str, speed: float):
+        cmd = cmd.lower()
+        s = speed
+    
         if cmd == "forward":
             self.forward(s)
         elif cmd == "forward_right":

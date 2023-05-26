@@ -28,5 +28,6 @@ class AppSettings(BaseSettings):
     retrain_model: bool = True
     default_epochs: int = 30
     default_retrain_epochs: int = 10
+    led_pins: List[int] = [200,38]
 
 settings = AppSettings()

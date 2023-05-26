@@ -13,6 +13,7 @@ RUN cd torch2trt && python3 setup.py install
 RUN cd ../
 RUN rm -rf torch2trt
 
+
 RUN pip3 install --no-cache-dir --verbose Adafruit_MotorHAT Adafruit_SSD1306 sparkfun-qwiic flask
 RUN pip3 install --no-cache-dir --verbose flask_cors
 RUN pip3 install --no-cache-dir --verbose pydantic

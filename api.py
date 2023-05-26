@@ -1,12 +1,12 @@
 #!/usr/bin/python3
-
+# https://maker.pro/nvidia-jetson/tutorial/how-to-use-gpio-pins-on-jetson-nano-developer-kit
 from flask import Flask, render_template, Response, jsonify
-from src.camera import Camera
 from src.robot import Robot
 from src.collector import ImageCollector
 from src.drive_model import DriveModel
 from flask_cors import CORS
 from settings import settings
+
 
 app = Flask(__name__)
 CORS(app)
@@ -23,7 +23,6 @@ app.robot: Robot = Robot(mode=2)
 app.dir = 0
 app.speed = settings.robot_drive_speed
 app.turn_speed = settings.robot_turn_speed
-
 
 def _autodrive(change):
     if not app.autodrive:
@@ -113,10 +112,11 @@ def stream():
 @app.route('/api/drive/<cmd>/<speed>')
 def drive(cmd, speed):
     
-    app.speed = float(speed)/100.0
-    app.turn_speed = app.speed #float(0.72*float(speed)/100.0)
+    speed = float(speed)
+    app.speed = speed
+    app.turn_speed = speed
 
-    app.robot.drive(cmd, int(speed))
+    app.robot.drive(cmd, app.speed)
     return {
         "cmd": cmd,
         "speed": speed

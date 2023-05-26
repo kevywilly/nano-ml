@@ -128,7 +128,10 @@ fi
 
 # ARGUS
 
-VOLUMES=""
+VOLUMES="-v /dev/gpiochip0:/dev/gpiochip0 -v /sys:/sys"
+
+#VOLUMES=""
+
 if [ -a "/tmp/argus_socket" ]; then
     VOLUMES="$VOLUMES -v /tmp/argus_socket:/tmp/argus_socket"
 fi
