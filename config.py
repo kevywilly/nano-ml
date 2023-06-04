@@ -59,3 +59,9 @@ Obstacle5dConfig = TrainingConfig(
         model_name="alexnet",
         categories = ["forward","slide_left","slide_right","turn_left","turn_right"]
     )
+
+MecanumConfig = TrainingConfig(
+        name="mecanum",
+        model_name="alexnet",
+        categories = ["forward","slide_left","slide_right","turn_left","turn_right"]
+    )

@@ -56,7 +56,7 @@ def _get_stream():
         try:
             yield (
                 b'--frame\r\n'
-                b'Content-Type: image/jpeg\r\n\r\n' + app.robot.get_image_capture() + b'\r\n'
+                b'Content-Type: image/jpeg\r\n\r\n' + app.robot.get_images()["concat"] + b'\r\n'
                 )  # concat frame one by one and show result
         except Exception as ex:
             pass
@@ -73,7 +73,7 @@ def toggle_autodrive():
     if(app.autodrive):
         app.robot.stop
         app.dir = 0
-        app.robot.camera.observe(_autodrive, names='value0')
+        app.robot.camera.observe(_autodrive, names='rvalue')
     else:
         try:
             app.robot.camera.unobserve(_autodrive)
@@ -95,7 +95,7 @@ def category_counts():
 @app.post('/api/categories/<category>/collect')
 def collect(category):
     try:
-        image = app.robot.camera.image
+        image = app.robot.rimage
         if image:
             return {category: app.image_collector.collect(category, image)}
         else:

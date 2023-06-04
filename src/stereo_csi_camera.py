@@ -2,7 +2,6 @@ from src.stereo_camera import StereoCamera
 import atexit
 import cv2
 import numpy as np
-import threading
 import traitlets
 
 
@@ -36,6 +35,8 @@ class StereoCSICamera(StereoCamera):
         atexit.register(self.release)
 
     def release(self):
+        print("Releasing Camera...")
+        self.running = False
         self.cap0.release()
         self.cap1.release()
 

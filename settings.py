@@ -9,7 +9,8 @@ from config import (
     Obstacle3dConfig, 
     Navigate2dConfig, 
     Obstacle3dV2Config, 
-    Obstacle5dConfig
+    Obstacle5dConfig,
+    MecanumConfig
 )
 
 class AppSettings(BaseSettings):
@@ -24,7 +25,7 @@ class AppSettings(BaseSettings):
     robot_drive_speed: float = 0.55
     robot_turn_speed: float = 0.45
 
-    default_model: TrainingConfig = Obstacle3dV2Config
+    default_model: TrainingConfig = MecanumConfig
     retrain_model: bool = True
     default_epochs: int = 30
     default_retrain_epochs: int = 10

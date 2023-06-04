@@ -5,9 +5,9 @@ import numpy as np
 
 class StereoCamera(traitlets.HasTraits):
 
-    value0 = traitlets.Any()
-    value1 = traitlets.Any()
-    vconcat = traitlets.Any()
+    rvalue = traitlets.Any()
+    lvalue = traitlets.Any()
+    cvalue = traitlets.Any()
 
     width = traitlets.Integer(default_value=224)
     height = traitlets.Integer(default_value=224)
@@ -17,9 +17,9 @@ class StereoCamera(traitlets.HasTraits):
     def __init__(self, *args, **kwargs):
         super(StereoCamera, self).__init__(*args, **kwargs)
         if self.format == 'bgr8':
-            self.value0 = np.empty((self.height, self.width, 3), dtype=np.uint8)
-            self.value1 = np.empty((self.height, self.width, 3), dtype=np.uint8)
-            self.vconcat = np.empty((self.height, self.width, 3), dtype=np.uint8)
+            self.rvalue = np.empty((self.height, self.width, 3), dtype=np.uint8)
+            self.lvalue = np.empty((self.height, self.width, 3), dtype=np.uint8)
+            self.cvalue = np.empty((self.height, self.width, 3), dtype=np.uint8)
         self._running = False
             
     def _read(self):
@@ -29,14 +29,14 @@ class StereoCamera(traitlets.HasTraits):
     def read(self):
         if self._running:
             raise RuntimeError('Cannot read directly while camera is running')
-        self.value0, self.value1, self.vconcat = self._read()
-        return self.value0, self.value1, self.vconcat
+        self.rvalue, self.lvalue, self.cvalue = self._read()
+        return self.rvalue, self.lvalue, self.cvalue
     
     def _capture_frames(self):
         while True:
             if not self._running:
                 break
-            self.value0, self.value1, self.vconcat = self._read()
+            self.rvalue, self.lvalue, self.cvalue = self._read()
             
     @traitlets.observe('running')
     def _on_running(self, change):
