@@ -8,6 +8,7 @@ import torch.nn.functional as F
 import numpy as np
 from config import TrainingConfig, MODELS_ROOT
 from settings import settings
+import os
 import atexit
 
 torch.hub.set_dir(MODELS_ROOT)
@@ -33,7 +34,9 @@ class DriveModel(SingletonConfigurable):
     def _load_model(self):
         print("preparing model...")
 
-        self.model = self.config.load_model(pretrained=False)
+        has_model = os.path.isfile(self.config.get_best_model_path())
+
+        self.model = self.config.load_model(pretrained=(not has_model))
         self.device = torch.device('cuda')
 
         cat_count = len(self.config.categories)
@@ -45,8 +48,12 @@ class DriveModel(SingletonConfigurable):
             self.model.fc = torch.nn.Linear(512, cat_count)
             self.model.eval().half()
 
-        print("loading state...")
-        self.model.load_state_dict(torch.load(self.config.get_best_model_path()))
+        if has_model:
+            print("loading state...")
+            self.model.load_state_dict(torch.load(self.config.get_best_model_path()))
+        else:
+            print("skipping state load - model does not exist yet")
+            
         self.model = self.model.to(self.device)
 
         print("model ready...")
