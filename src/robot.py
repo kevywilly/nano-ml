@@ -55,7 +55,7 @@ class Robot(SingletonConfigurable):
         
     
     def get_image_capture(self):
-        return self.camera.image.value
+        return self.camera.iconcat.value
     
     def set_motors(self, speeds):
         for idx, speed in enumerate(speeds):

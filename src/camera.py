@@ -1,15 +1,19 @@
 import traitlets
 from traitlets.config.configurable import SingletonConfigurable
 from jetcam.utils import bgr8_to_jpeg
-from jetcam.csi_camera import CSICamera
+from src.stereo_csi_camera import StereoCSICamera
 import atexit
 import numpy as np
 from src.image import Image
 
 class Camera(SingletonConfigurable):
 
-    value = traitlets.Any()
-    image = traitlets.Any()
+    value0 = traitlets.Any()
+    value1 = traitlets.Any()
+    vconcat = traitlets.Any()
+    image0 = traitlets.Any()
+    image1 = traitlets.Any()
+    iconcat = traitlets.Any()
     camera = traitlets.Any()
 
     # config
@@ -21,9 +25,11 @@ class Camera(SingletonConfigurable):
 
     def __init__(self, *args, **kwargs):
         super(Camera,self).__init__(*args, **kwargs)
-        self.value = np.empty((self.height, self.width, 3), dtype=np.uint8)
+        self.value0 = np.empty((self.height, self.width, 3), dtype=np.uint8)
+        self.value1 = np.empty((self.height, self.width, 3), dtype=np.uint8)
+        self.vconcat = np.empty((self.height, self.width, 3), dtype=np.uint8)
         self.camera_link = None
-        super(Camera, self).__init__(*args, **kwargs)
+
         atexit.register(self.stop)
 
     def start(self):
@@ -32,10 +38,9 @@ class Camera(SingletonConfigurable):
         
         print(f"Starting Camera")
       
-        self.camera = CSICamera(
+        self.camera = StereoCSICamera(
             width=self.width, 
             height=self.height, 
-            capture_device=0, 
             capture_width=self.capture_width, 
             capture_height=self.capture_height, 
             capture_fps=30
@@ -43,10 +48,16 @@ class Camera(SingletonConfigurable):
         
         
        
-        self.image = Image()
+        self.image0 = Image()
+        self.image1 = Image()
+        self.iconcat = Image()
         
-        traitlets.dlink((self.camera, 'value'), (self, 'value'))
-        traitlets.dlink((self.camera, 'value'), (self.image, 'value'), transform=bgr8_to_jpeg)
+        traitlets.dlink((self.camera, 'value0'), (self, 'value0'))
+        traitlets.dlink((self.camera, 'value0'), (self.image0, 'value'), transform=bgr8_to_jpeg)
+        traitlets.dlink((self.camera, 'value1'), (self, 'value1'))
+        traitlets.dlink((self.camera, 'value1'), (self.image1, 'value'), transform=bgr8_to_jpeg)
+        traitlets.dlink((self.camera, 'vconcat'), (self, 'vconcat'))
+        traitlets.dlink((self.camera, 'vconcat'), (self.iconcat, 'value'), transform=bgr8_to_jpeg)
 
         self.camera.read()
         
@@ -55,4 +66,4 @@ class Camera(SingletonConfigurable):
     def stop(self):
         print("\nReleasing camera...\n")
         self.camera.running = False
-        self.camera.cap.release()
+        self.camera.release()

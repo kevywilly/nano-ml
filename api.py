@@ -73,7 +73,7 @@ def toggle_autodrive():
     if(app.autodrive):
         app.robot.stop
         app.dir = 0
-        app.robot.camera.observe(_autodrive, names='value')
+        app.robot.camera.observe(_autodrive, names='value0')
     else:
         try:
             app.robot.camera.unobserve(_autodrive)
