@@ -163,7 +163,7 @@ class Robot(SingletonConfigurable):
             self.forward(s)
         elif cmd == "forward_right":
             self.forward_right(s)
-        elif cmd == "foward_left":
+        elif cmd == "forward_left":
             self.forward_left(s)
         elif cmd == "backward":
             self.backward(s)

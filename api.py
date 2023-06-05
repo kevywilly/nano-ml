@@ -50,13 +50,13 @@ def _autodrive(change):
     else:
         app.robot.right(app.turn_speed)
 
-def _get_stream():  
+def _get_stream(cam: str = "concat"):  
     while True:
         # ret, buffer = cv2.imencode('.jpg', frame)
         try:
             yield (
                 b'--frame\r\n'
-                b'Content-Type: image/jpeg\r\n\r\n' + app.robot.get_images()["concat"] + b'\r\n'
+                b'Content-Type: image/jpeg\r\n\r\n' + app.robot.get_images()[cam] + b'\r\n'
                 )  # concat frame one by one and show result
         except Exception as ex:
             pass
@@ -108,6 +108,11 @@ def collect(category):
 @app.route('/api/stream')
 def stream():
     return Response(_get_stream(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+@app.route('/api/stream/<cam>')
+def stream_camera(cam: str):
+    return Response(_get_stream(cam.lower()), mimetype='multipart/x-mixed-replace; boundary=frame')
+   
 
 @app.route('/api/drive/<cmd>/<speed>')
 def drive(cmd, speed):
