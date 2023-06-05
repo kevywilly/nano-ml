@@ -45,10 +45,9 @@ class StereoCSICamera(StereoCamera):
                 device, self.capture_width, self.capture_height, self.capture_fps, self.width, self.height)
     
     def _read(self):
-        re0, image_right = self.cap_right.read()
-        re1, image_left = self.cap_left.read()
+        re0, value_right = self.cap_right.read()
+        re1, value_left = self.cap_left.read()
         if re0 and re1:
-            iconcat = cv2.hconcat([image_left, image_right])
-            return (image_left, image_right, iconcat)
+            return value_right, value_left
         else:
             raise RuntimeError('Could not read image from cameras')

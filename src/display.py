@@ -7,6 +7,7 @@ from PIL import ImageFont
 import traitlets
 from traitlets.config.configurable import SingletonConfigurable
 from threading import Event, Thread
+import atexit
 
 DEFAULT_TEXT = ["Hello Jetson Nano!","","",""]
 class Display(SingletonConfigurable):
@@ -21,6 +22,7 @@ class Display(SingletonConfigurable):
         self.event = None
         self.thread = None
         self.start()
+        atexit.register(self.stop)
         
     @traitlets.observe('value')
     def _observe_value(self, change):
@@ -49,7 +51,6 @@ class Display(SingletonConfigurable):
             
         self.thread = None
         self.event = None
-        
         self.started = False
         
     def log(self, text):

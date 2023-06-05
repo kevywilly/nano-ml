@@ -6,6 +6,7 @@ from src.collector import ImageCollector
 from src.drive_model import DriveModel
 from flask_cors import CORS
 from settings import settings
+from src.calibrator import Calibrator
 
 
 app = Flask(__name__)
@@ -19,10 +20,11 @@ cors = CORS(app, resource={
 app.image_collector = ImageCollector.instance(config=settings.default_model)
 app.drive_model = DriveModel.instance(config=settings.default_model)
 app.autodrive = False
-app.robot: Robot = Robot(mode=2)
+app.robot: Robot = Robot.instance()
 app.dir = 0
 app.speed = settings.robot_drive_speed
 app.turn_speed = settings.robot_turn_speed
+app.calibrator: Calibrator = Calibrator()
 
 def _autodrive(change):
     if not app.autodrive:
@@ -50,13 +52,13 @@ def _autodrive(change):
     else:
         app.robot.right(app.turn_speed)
 
-def _get_stream(cam: str = "concat"):  
+def _get_stream(img: str = "right"):  
     while True:
         # ret, buffer = cv2.imencode('.jpg', frame)
         try:
             yield (
                 b'--frame\r\n'
-                b'Content-Type: image/jpeg\r\n\r\n' + app.robot.get_images()[cam] + b'\r\n'
+                b'Content-Type: image/jpeg\r\n\r\n' + app.robot.get_images()[img.lower()] + b'\r\n'
                 )  # concat frame one by one and show result
         except Exception as ex:
             pass
@@ -73,7 +75,7 @@ def toggle_autodrive():
     if(app.autodrive):
         app.robot.stop
         app.dir = 0
-        app.robot.camera.observe(_autodrive, names='rvalue')
+        app.robot.camera.observe(_autodrive, names='value_right')
     else:
         try:
             app.robot.camera.unobserve(_autodrive)
@@ -95,7 +97,7 @@ def category_counts():
 @app.post('/api/categories/<category>/collect')
 def collect(category):
     try:
-        image = app.robot.rimage
+        image = app.robot.image_right
         if image:
             return {category: app.image_collector.collect(category, image)}
         else:
@@ -109,9 +111,9 @@ def collect(category):
 def stream():
     return Response(_get_stream(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
-@app.route('/api/stream/<cam>')
-def stream_camera(cam: str):
-    return Response(_get_stream(cam.lower()), mimetype='multipart/x-mixed-replace; boundary=frame')
+@app.route('/api/stream/<img>')
+def stream_camera(img: str):
+    return Response(_get_stream(img), mimetype='multipart/x-mixed-replace; boundary=frame')
    
 
 @app.route('/api/drive/<cmd>/<speed>')
@@ -126,7 +128,26 @@ def drive(cmd, speed):
         "cmd": cmd,
         "speed": speed
     }
-            
+
+@app.route('/api/calibration/images/count')
+def get_calibration_image_count():
+    return {"count": app.calibrator.count}
+
+@app.route('/api/calibration/images/collect')
+def collect_calibration_image():
+
+    try:
+        image_right = app.robot.image_right
+        image_left = app.robot.image_left
+        if image_right is not None and image_left is not None:
+            print("saving images")
+            app.calibrator.collect(image_right, image_left)
+    
+    except Exception as ex:
+        print(ex)
+    finally:
+        return {"count": app.calibrator.count}
+
 if __name__ == "__main__":
     app.run(host='0.0.0.0', debug=False)
 

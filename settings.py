@@ -1,6 +1,5 @@
 from pydantic import BaseSettings
 from typing import List
-from pydantic import BaseModel
 from typing import Optional, Any
 import torchvision
 from config import TrainingConfig
@@ -30,5 +29,7 @@ class AppSettings(BaseSettings):
     default_epochs: int = 30
     default_retrain_epochs: int = 10
     led_pins: List[int] = [200,38]
+
+    calibration_folder: str = "/ml_data/calibration"
 
 settings = AppSettings()

@@ -9,14 +9,15 @@ import atexit
 from settings import settings
 from src.image import Image
 from jetcam.utils import bgr8_to_jpeg
+from enum import Enum
+
 
 class Robot(SingletonConfigurable):
     
     camera = traitlets.Instance(StereoCSICamera)
     logger = traitlets.Instance(Display)
-    rimage = traitlets.Instance(Image)
-    limage = traitlets.Instance(Image)
-    image = traitlets.Instance(Image)
+    image_right = traitlets.Instance(Image)
+    image_left = traitlets.Instance(Image)
 
     m1 = traitlets.Instance(Motor)
     m2 = traitlets.Instance(Motor)
@@ -24,7 +25,7 @@ class Robot(SingletonConfigurable):
     m4 = traitlets.Instance(Motor, allow_none=True)
     
     i2c_bus = traitlets.Integer(default_value=1).tag(config=True)
-    mode = traitlets.Integer(default_value=1).tag(config=True)
+    mode = traitlets.Integer(default_value=2).tag(config=True)
     m1_channel = traitlets.Integer(default_value=1).tag(config=True)
     m1_alpha = traitlets.Float(default_value=settings.m1_alpha).tag(config=True)
     m2_channel = traitlets.Integer(default_value=2).tag(config=True)
@@ -46,8 +47,19 @@ class Robot(SingletonConfigurable):
     def __init__(self, *args, **kwargs):
         
         super(Robot, self).__init__(*args, **kwargs)
+
         self.logger = Display()
-        self.log("...")
+        self.log("Starting robot...")
+        self._start_cameras()
+        self._start_motors()
+        self.log("...robot started.")
+
+        atexit.register(self.stop)
+    
+    def _start_motors(self):
+
+        self.log("Starting motors...")
+
         self.motor_driver = Adafruit_MotorHAT(addr=0x60, i2c_bus=self.i2c_bus)
         
         self.m1 = Motor(self.motor_driver, channel=self.m1_channel, alpha=self.m1_alpha)
@@ -56,11 +68,14 @@ class Robot(SingletonConfigurable):
         self.m4 = Motor(self.motor_driver, channel=self.m4_channel, alpha=self.m4_alpha)
         self.motors = [self.m1, self.m2, self.m3, self.m4]
         
-        self.log("Motors started...")
+        self.log("...done.")
 
-        self.image = Image()
-        self.rimage = Image()
-        self.limage = Image()
+    def _start_cameras(self):
+
+        self.log("Starting cameras...")
+
+        self.image_right = Image()
+        self.image_left = Image()
 
         self.camera = StereoCSICamera(
             width=self.cam_width, 
@@ -69,32 +84,22 @@ class Robot(SingletonConfigurable):
             capture_height=self.cam_capture_height, 
             capture_fps=30
             )
-        
-        # self.camera = Camera.instance()
-        # self.camera.start()
 
         self.camera.read()
         self.camera.running = True
 
-        self.log("Camera started ...")
+        traitlets.dlink((self.camera, 'value_right'), (self.image_right, 'value'), transform=bgr8_to_jpeg)
+        traitlets.dlink((self.camera, 'value_left'), (self.image_left, 'value'), transform=bgr8_to_jpeg)
 
-        traitlets.dlink((self.camera, 'rvalue'), (self.rimage, 'value'), transform=bgr8_to_jpeg)
-        traitlets.dlink((self.camera, 'lvalue'), (self.limage, 'value'), transform=bgr8_to_jpeg)
-        traitlets.dlink((self.camera, 'cvalue'), (self.image, 'value'), transform=bgr8_to_jpeg)
+        self.log("...done.")
 
-        atexit.register(self.stop)
-    
     def shutdown(self):
         self.log("Shutting down robot...")
         self.stop()
         self.camera.release()
-        # self.camera.release()
-
-    def get_image_capture(self):
-        return self.image.value
     
     def get_images(self):
-        return {"left" : self.limage.value, "right" : self.rimage.value, "concat": self.image.value}
+        return {"right" : self.image_right.value, "left" : self.image_left.value, }
     
     def set_motors(self, speeds):
         for idx, speed in enumerate(speeds):
