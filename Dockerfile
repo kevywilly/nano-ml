@@ -32,9 +32,13 @@ RUN git clone https://github.com/kevywilly/nano-control
 RUN cp -r nano-control/build /var/www/build
 RUN rm -rf nano-control
 
+RUN cd /nano_ml && git clone https://github.com/mtmal/Jetson-Stereo-CSI-Calibration.git calibration \
+  && cd calibration && mkdir build && cd build && cmake .. && make -j 3
+
+
 RUN chmod +x /nano_ml/api.py
 
-RUN cd /nano_ml
+
 
 CMD ["/nano_ml/entrypoint.sh"]
 

@@ -130,23 +130,37 @@ def drive(cmd, speed):
     }
 
 @app.route('/api/calibration/images/count')
-def get_calibration_image_count():
-    return {"count": app.calibrator.count}
+def get_calibration_image_counts():
+    app.calibrator._get_counts()
+    return {
+        "right": app.calibrator.right_count,
+        "left": app.calibrator.left_count,
+        "stereo": app.calibrator.stereo_count
+        }
 
-@app.route('/api/calibration/images/collect')
-def collect_calibration_image():
+@app.route('/api/calibration/images/collect/<img>')
+def collect_calibration_image(img: str):
 
+    count = 0
     try:
-        image_right = app.robot.image_right
-        image_left = app.robot.image_left
-        if image_right is not None and image_left is not None:
-            print("saving images")
-            app.calibrator.collect(image_right, image_left)
+        if img.lower() == "right":
+            image = app.robot.camera.value_right
+            count = app.calibrator.collect_single(image, 0) if image is not None else app.calibrator.right_count
+        elif img.lower() == "left":
+            image = app.robot.camera.value_left
+            count = app.calibrator.collect_single(image, 1) if image is not None else app.calibrator.left_count
+        elif img.lower() == "stereo":
+            image_right = app.robot.camera.value_right
+            image_left = app.robot.camera.value_left
+            if image_right is not None and image_left is not None:
+                count = app.calibrator.collect_stereo(image_right, image_left)
+            else:
+                count = app.calibrator.stereo_count
     
     except Exception as ex:
         print(ex)
-    finally:
-        return {"count": app.calibrator.count}
+    
+    return {"count": count}
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', debug=False)
