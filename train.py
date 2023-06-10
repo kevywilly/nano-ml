@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 
-from src.trainer import Trainer
+from src.training.trainer import Trainer
 from settings import settings
-from config import Navigate2dConfig,Obstacle2dConfig, Obstacle3dConfig
+from src.training.config import Navigate2dConfig,Obstacle2dConfig, Obstacle3dConfig
 import os
 
 

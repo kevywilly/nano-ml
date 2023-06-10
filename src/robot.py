@@ -2,14 +2,13 @@ import time
 import traitlets
 from traitlets.config.configurable import SingletonConfigurable
 from Adafruit_MotorHAT import Adafruit_MotorHAT
-from src.stereo_csi_camera import StereoCSICamera
-from src.motor import Motor
-from src.display import Display
-import atexit
+from src.visual.stereo_csi_camera import StereoCSICamera
+from src.visual.image import Image
+from src.visual.utils import bgr8_to_jpeg
+from src.motion.motor import Motor
+from src.logging.display import Display
 from settings import settings
-from src.image import Image
-from jetcam.utils import bgr8_to_jpeg
-from enum import Enum
+import atexit
 
 
 class Robot(SingletonConfigurable):
@@ -18,6 +17,7 @@ class Robot(SingletonConfigurable):
     logger = traitlets.Instance(Display)
     image_right = traitlets.Instance(Image)
     image_left = traitlets.Instance(Image)
+    image_3d = traitlets.Instance(Image)
 
     m1 = traitlets.Instance(Motor)
     m2 = traitlets.Instance(Motor)
@@ -34,12 +34,6 @@ class Robot(SingletonConfigurable):
     m3_alpha = traitlets.Float(default_value=settings.m3_alpha).tag(config=True)
     m4_channel = traitlets.Integer(default_value=4).tag(config=True)
     m4_alpha = traitlets.Float(default_value=settings.m4_alpha).tag(config=True)
-
-    cam_width = traitlets.Integer(default_value=224).tag(config=True)
-    cam_height = traitlets.Integer(default_value=224).tag(config=True)
-    cam_fps = traitlets.Integer(default_value=30).tag(config=True)
-    cam_capture_width = traitlets.Integer(default_value=816).tag(config=True)
-    cam_capture_height = traitlets.Integer(default_value=616).tag(config=True)
 
     def log(self, text):
         self.logger.log(text)
@@ -76,12 +70,13 @@ class Robot(SingletonConfigurable):
 
         self.image_right = Image()
         self.image_left = Image()
+        self.image_3d = Image()
 
         self.camera = StereoCSICamera(
-            width=self.cam_width, 
-            height=self.cam_height, 
-            capture_width=self.cam_capture_width, 
-            capture_height=self.cam_capture_height, 
+            width=settings.cam_width, 
+            height=settings.cam_height, 
+            capture_width=settings.cam_capture_width, 
+            capture_height=settings.cam_capture_height, 
             capture_fps=30
             )
 
@@ -90,6 +85,7 @@ class Robot(SingletonConfigurable):
 
         traitlets.dlink((self.camera, 'value_right'), (self.image_right, 'value'), transform=bgr8_to_jpeg)
         traitlets.dlink((self.camera, 'value_left'), (self.image_left, 'value'), transform=bgr8_to_jpeg)
+        traitlets.dlink((self.camera, 'value_3d'), (self.image_3d, 'value'), transform=bgr8_to_jpeg)
 
         self.log("...done.")
 
@@ -99,7 +95,7 @@ class Robot(SingletonConfigurable):
         self.camera.release()
     
     def get_images(self):
-        return {"right" : self.image_right.value, "left" : self.image_left.value, }
+        return {"left" : self.image_left.value, "right" : self.image_right.value, "3d" : self.image_3d.value}
     
     def set_motors(self, speeds):
         for idx, speed in enumerate(speeds):

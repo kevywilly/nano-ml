@@ -1,12 +1,12 @@
 #!/usr/bin/python3
 # https://maker.pro/nvidia-jetson/tutorial/how-to-use-gpio-pins-on-jetson-nano-developer-kit
 from flask import Flask, render_template, Response, jsonify
-from src.robot import Robot
-from src.collector import ImageCollector
-from src.drive_model import DriveModel
 from flask_cors import CORS
+from src.robot import Robot
+from src.visual.collector import ImageCollector
+from src.motion.drive_model import DriveModel
+from src.visual.calibrator import Calibrator
 from settings import settings
-from src.calibrator import Calibrator
 
 
 app = Flask(__name__)
@@ -58,7 +58,7 @@ def _get_stream(img: str = "right"):
         try:
             yield (
                 b'--frame\r\n'
-                b'Content-Type: image/jpeg\r\n\r\n' + app.robot.get_images()[img.lower()] + b'\r\n'
+                b'Content-Type: image/jpeg\r\n\r\n' + app.robot.get_images()["3d"] + b'\r\n'
                 )  # concat frame one by one and show result
         except Exception as ex:
             pass
@@ -75,7 +75,7 @@ def toggle_autodrive():
     if(app.autodrive):
         app.robot.stop
         app.dir = 0
-        app.robot.camera.observe(_autodrive, names='value_right')
+        app.robot.camera.observe(_autodrive, names='value_3d')
     else:
         try:
             app.robot.camera.unobserve(_autodrive)
@@ -133,8 +133,8 @@ def drive(cmd, speed):
 def get_calibration_image_counts():
     app.calibrator._get_counts()
     return {
-        "right": app.calibrator.right_count,
-        "left": app.calibrator.left_count,
+        "right": 0,
+        "left": 0,
         "stereo": app.calibrator.stereo_count
         }
 
@@ -143,19 +143,12 @@ def collect_calibration_image(img: str):
 
     count = 0
     try:
-        if img.lower() == "right":
-            image = app.robot.camera.value_right
-            count = app.calibrator.collect_single(image, 0) if image is not None else app.calibrator.right_count
-        elif img.lower() == "left":
-            image = app.robot.camera.value_left
-            count = app.calibrator.collect_single(image, 1) if image is not None else app.calibrator.left_count
-        elif img.lower() == "stereo":
-            image_right = app.robot.camera.value_right
-            image_left = app.robot.camera.value_left
-            if image_right is not None and image_left is not None:
-                count = app.calibrator.collect_stereo(image_right, image_left)
-            else:
-                count = app.calibrator.stereo_count
+        image_left = app.robot.camera.value_left
+        image_right = app.robot.camera.value_right
+        if image_left is not None and image_right is not None :
+            count = app.calibrator.collect_stereo(image_left=image_left, image_right=image_right)
+        else:
+            count = app.calibrator.stereo_count
     
     except Exception as ex:
         print(ex)
