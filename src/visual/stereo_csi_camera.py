@@ -47,7 +47,7 @@ class StereoCSICamera(StereoCamera):
 
         return (
         "nvarguscamerasrc sensor-id=%d ! "
-        "video/x-raw(memory:NVMM), width=(int)%d, height=(int)%d, framerate=(fraction)%d/1 ! "
+        "video/x-raw(memory:NVMM), width=(int)%d, height=(int)%d, framerate=%d/1 ! "
         "nvvidconv flip-method=%d ! "
         "video/x-raw, width=(int)%d, height=(int)%d, format=(string)BGRx ! "
         "videoconvert ! "
@@ -70,8 +70,8 @@ class StereoCSICamera(StereoCamera):
         re0, value_left = self.cap_left.read()
         re1, value_right = self.cap_right.read()
         if re0 and re1:
-            value_3d = self.mapper.map_3d(value_left, value_right)
-            # value_3d = value_3d[18:540-18, 32:960-32]
-            return value_left, value_right, value_3d
+            mvalue_left, mvalue_right = self.mapper.remap(value_left, value_right)
+            value_3d = self.mapper.merge_3d(mvalue_left, mvalue_right)
+            return value_left, value_right, mvalue_left, mvalue_right, value_3d
         else:
             raise RuntimeError('Could not read image from cameras')

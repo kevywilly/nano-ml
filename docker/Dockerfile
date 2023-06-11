@@ -22,11 +22,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && apt-get install -y unzip vim nginx \
   && rm -rf /var/lib/apt/lists/*
 
-COPY nginx.conf /etc/nginx/sites-available/default
+COPY docker/nginx.conf /etc/nginx/sites-available/default
 
 ARG CACHEBUST=1
 
-COPY .. /nano_ml
+COPY . /nano_ml
 
 RUN git clone https://github.com/kevywilly/nano-control 
 RUN cp -r nano-control/build /var/www/build
@@ -35,5 +35,5 @@ RUN rm -rf nano-control
 RUN chmod +x /nano_ml/api.py
 
 
-CMD ["/nano_ml/scripts/entrypoint.sh"]
+CMD ["/nano_ml/entrypoint.sh"]
 

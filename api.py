@@ -2,6 +2,7 @@
 # https://maker.pro/nvidia-jetson/tutorial/how-to-use-gpio-pins-on-jetson-nano-developer-kit
 from flask import Flask, render_template, Response, jsonify
 from flask_cors import CORS
+import flask
 from src.robot import Robot
 from src.visual.collector import ImageCollector
 from src.motion.drive_model import DriveModel
@@ -58,7 +59,7 @@ def _get_stream(img: str = "right"):
         try:
             yield (
                 b'--frame\r\n'
-                b'Content-Type: image/jpeg\r\n\r\n' + app.robot.get_images()["3d"] + b'\r\n'
+                b'Content-Type: image/jpeg\r\n\r\n' + app.robot.get_images()[img.lower()] + b'\r\n'
                 )  # concat frame one by one and show result
         except Exception as ex:
             pass
@@ -93,11 +94,23 @@ def categories():
 @app.get('/api/categories/counts')
 def category_counts():
     return jsonify([{"name": k, "entries": v} for (k,v) in app.image_collector.counts.items()])
+
+@app.get('/api/categories/images')
+def category_images():
+    return app.image_collector.get_images()
+
+@app.get('/api/categories/<category>/images/<name>')
+def get_image(category, name):
+    bytes_str = app.image_collector.load_image(category, name)
+    response = flask.make_response(bytes_str)
+    response.headers.set('Content-Type', 'image/jpeg')
+    return response
+
     
 @app.post('/api/categories/<category>/collect')
 def collect(category):
     try:
-        image = app.robot.image_right
+        image = app.robot.mimage_right
         if image:
             return {category: app.image_collector.collect(category, image)}
         else:

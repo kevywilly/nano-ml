@@ -6,6 +6,8 @@ import os
 from src.visual.image import Image
 from src.training.config import TrainingConfig, MODELS_ROOT
 from settings import settings
+import glob
+import cv2 
 
 class ImageCollector(SingletonConfigurable):
 
@@ -52,5 +54,20 @@ class ImageCollector(SingletonConfigurable):
             return self.get_count(category)
         
         return -1
+    
+    def get_images(self):
+        resp = {}
+        for category in self.config.categories:
+            resp[category] = os.listdir(self.category_path(category))
+        
+        return resp
+    
+    def load_image(self, category, name):
+        # https://alexsm.com/flask-serve-images-on-the-fly/
+        im = cv2.imread(os.path.join(self.category_path(category),name), cv2.IMREAD_ANYCOLOR)
+        _, im_bytes_np = cv2.imencode('.jpeg',im)
+    
+        return im_bytes_np.tobytes()
+
 
 

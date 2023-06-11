@@ -18,6 +18,8 @@ class Robot(SingletonConfigurable):
     image_right = traitlets.Instance(Image)
     image_left = traitlets.Instance(Image)
     image_3d = traitlets.Instance(Image)
+    mimage_right = traitlets.Instance(Image)
+    mimage_left = traitlets.Instance(Image)
 
     m1 = traitlets.Instance(Motor)
     m2 = traitlets.Instance(Motor)
@@ -70,6 +72,8 @@ class Robot(SingletonConfigurable):
 
         self.image_right = Image()
         self.image_left = Image()
+        self.mimage_right = Image()
+        self.mimage_left = Image()
         self.image_3d = Image()
 
         self.camera = StereoCSICamera(
@@ -85,6 +89,8 @@ class Robot(SingletonConfigurable):
 
         traitlets.dlink((self.camera, 'value_right'), (self.image_right, 'value'), transform=bgr8_to_jpeg)
         traitlets.dlink((self.camera, 'value_left'), (self.image_left, 'value'), transform=bgr8_to_jpeg)
+        traitlets.dlink((self.camera, 'mvalue_right'), (self.mimage_right, 'value'), transform=bgr8_to_jpeg)
+        traitlets.dlink((self.camera, 'mvalue_left'), (self.mimage_left, 'value'), transform=bgr8_to_jpeg)
         traitlets.dlink((self.camera, 'value_3d'), (self.image_3d, 'value'), transform=bgr8_to_jpeg)
 
         self.log("...done.")
@@ -95,7 +101,13 @@ class Robot(SingletonConfigurable):
         self.camera.release()
     
     def get_images(self):
-        return {"left" : self.image_left.value, "right" : self.image_right.value, "3d" : self.image_3d.value}
+        return {
+            "left" : self.image_left.value, 
+            "right" : self.image_right.value, 
+            "mleft" : self.mimage_left.value, 
+            "mright" : self.mimage_right.value, 
+            "3d" : self.image_3d.value
+            }
     
     def set_motors(self, speeds):
         for idx, speed in enumerate(speeds):

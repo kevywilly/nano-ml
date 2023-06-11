@@ -152,6 +152,7 @@ class Calibrator:
         print("Calibrating camera")
 
         img_shape = gray_l.shape[::-1]
+        print(img_shape)
 
         rt1, self.M1, self.d1, self.r1, self.t1 = cv.calibrateCamera(
             self.objpoints, self.imgpoints_l, img_shape, None, None
@@ -423,7 +424,3 @@ class Calibrator:
         cv.imwrite(os.path.join(self.image_output_folder, f"disp_2{filename}"), disp)
         
         print('Done')
-
-
-
-
