@@ -97,7 +97,7 @@ def categories():
 
 @app.get('/api/categories/counts')
 def category_counts():
-    return jsonify([{"name": k, "entries": v} for (k,v) in app.image_collector.counts.items()])
+    return jsonify([{"name": k, "count": v} for (k,v) in app.image_collector.counts.items()])
 
 
 @app.get('/api/categories/<category>/images')
@@ -165,9 +165,7 @@ def drive(cmd, speed):
 def get_calibration_image_counts():
     app.calibrator._get_counts()
     return {
-        "right": 0,
-        "left": 0,
-        "stereo": app.calibrator.stereo_count
+        "count": app.calibrator.stereo_count
         }
 
 @app.route('/api/calibration/images/collect')
@@ -186,6 +184,30 @@ def collect_calibration_image():
         print(ex)
     
     return {"count": count}
+
+@app.get('/api/calibration/images')
+def get_calibration_images():
+    return {"images" : app.calibrator.get_images()}
+
+@app.delete('/api/calibration/images')
+def delete_calibration_images():
+    return {"status" : app.calibrator.delete_all_images()}
+
+@app.delete('/api/calibration/images/<name>')
+def delete_calibration_image(name):
+    return {"status" : app.calibrator.delete_image(name)}
+
+@app.get('/api/calibration/<cam>/images/<name>')
+def get_calibration_image(cam: str, name: str):
+    bytes_str = app.calibrator.load_image(cam, name)
+    response = flask.make_response(bytes_str)
+    response.headers.set('Content-Type', 'image/png')
+    return response
+
+@app.get('/api/calibration/calibrate')
+def calibrate():
+    app.calibrator.rectify3d()
+    return {"status": True}
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', debug=False)

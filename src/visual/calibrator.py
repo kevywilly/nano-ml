@@ -19,9 +19,6 @@ class Calibrator:
 
     def __init__(self):
         self.stereo_count = 0
-        self.left_count = 0
-        self.right_count = 0
-
         self.image_output_folder = f"{settings.calibration_folder}/images/output"
         self.stereo_right_folder = f"{settings.calibration_folder}/images/stereo/right"
         self.stereo_left_folder = f"{settings.calibration_folder}/images/stereo/left"
@@ -58,8 +55,6 @@ class Calibrator:
 
     def _get_counts(self):
         self.stereo_count = self._get_count(self.stereo_left_folder)
-        self.right_count = 0
-        self.left_count = 0
 
     def _get_count(self, folder):
         return len(os.listdir(folder))
@@ -296,7 +291,10 @@ class Calibrator:
     """
     
 
-    def rectify3d(self, model: CameraModel):
+    def rectify3d(self, model: CameraModel = None):
+
+        if model is None:
+            model = self.calibrate()
 
         filenames, _ = self._get_stereo_filenames()
 
@@ -424,3 +422,43 @@ class Calibrator:
         cv.imwrite(os.path.join(self.image_output_folder, f"disp_2{filename}"), disp)
         
         print('Done')
+    
+    def get_images(self):
+        return os.listdir(self.stereo_left_folder)
+    
+    def load_image(self, camera: str, name: str):
+        if camera.lower() == "left":
+            folder = self.stereo_left_folder
+        else:
+            folder = self.stereo_right_folder
+
+        im = cv.imread(os.path.join(folder,name), cv.IMREAD_ANYCOLOR)
+        _, im_bytes_np = cv.imencode('.png',im)
+    
+        return im_bytes_np.tobytes()
+    
+    def delete_all_images(self):
+        for filename in os.listdir(self.stereo_left_folder):
+            try:
+                os.remove(os.path.join(self.stereo_left_folder, filename))
+            except:
+                pass
+            try:
+                os.remove(os.path.join(self.stereo_right_folder, filename))
+            except:
+                pass
+
+    def delete_image(self, name):
+
+
+        try:
+            os.remove(os.path.join(self.stereo_left_folder,name))
+        except:
+            pass
+
+        try:
+            os.remove(os.path.join(self.stereo_right_folder,name))
+        except:
+            pass
+        
+        return True
