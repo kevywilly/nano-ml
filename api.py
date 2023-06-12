@@ -53,6 +53,7 @@ def _autodrive(change):
     else:
         app.robot.right(app.turn_speed)
 
+
 def _get_stream(img: str = "right"):  
     while True:
         # ret, buffer = cv2.imencode('.jpg', frame)
@@ -67,6 +68,7 @@ def _get_stream(img: str = "right"):
 @app.route('/')
 def index():
     return render_template('index.html')
+
 
 @app.route('/api/autodrive')
 def toggle_autodrive():
@@ -87,17 +89,22 @@ def toggle_autodrive():
 
     return jsonify({"autodrive": app.autodrive})
 
+
 @app.get('/api/categories')
 def categories():
     return jsonify(app.image_collector.categories)
+
 
 @app.get('/api/categories/counts')
 def category_counts():
     return jsonify([{"name": k, "entries": v} for (k,v) in app.image_collector.counts.items()])
 
-@app.get('/api/categories/images')
-def category_images():
-    return app.image_collector.get_images()
+
+@app.get('/api/categories/<category>/images')
+def category_images(category: str):
+
+    return {"images" :app.image_collector.get_images(category)}
+
 
 @app.get('/api/categories/<category>/images/<name>')
 def get_image(category, name):
@@ -105,6 +112,18 @@ def get_image(category, name):
     response = flask.make_response(bytes_str)
     response.headers.set('Content-Type', 'image/jpeg')
     return response
+
+
+@app.put('/api/categories/<category>/images/<name>/<category2>')
+def move_image(category, name, category2):
+    resp = app.image_collector.move_image(category, name, category2)
+    return {"status": resp}
+
+
+@app.delete('/api/categories/<category>/images/<name>')
+def delete_image(category, name):
+    resp = app.image_collector.delete_image(category, name)
+    return {"status": resp}
 
     
 @app.post('/api/categories/<category>/collect')
@@ -151,8 +170,8 @@ def get_calibration_image_counts():
         "stereo": app.calibrator.stereo_count
         }
 
-@app.route('/api/calibration/images/collect/<img>')
-def collect_calibration_image(img: str):
+@app.route('/api/calibration/images/collect')
+def collect_calibration_image():
 
     count = 0
     try:

@@ -55,10 +55,9 @@ class ImageCollector(SingletonConfigurable):
         
         return -1
     
-    def get_images(self):
-        resp = {}
-        for category in self.config.categories:
-            resp[category] = os.listdir(self.category_path(category))
+    def get_images(self, category):
+       
+        resp = os.listdir(self.category_path(category))
         
         return resp
     
@@ -68,6 +67,18 @@ class ImageCollector(SingletonConfigurable):
         _, im_bytes_np = cv2.imencode('.jpeg',im)
     
         return im_bytes_np.tobytes()
+
+    def delete_image(self, category, name):
+        os.remove(os.path.join(self.category_path(category),name))
+        return True
+    
+    def move_image(self, category, name, new_category):
+        os.rename(
+            os.path.join(self.category_path(category),name),
+            os.path.join(self.category_path(new_category),name)
+            )
+        return True
+        
 
 
 
