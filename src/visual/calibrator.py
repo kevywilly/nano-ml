@@ -115,10 +115,11 @@ class Calibrator:
             ret_l, corners_l = cv.findChessboardCorners(gray_l, (ROWS,COLS), None)
             ret_r, corners_r = cv.findChessboardCorners(gray_r, (ROWS,COLS), None)
 
-            # If found, add object points, image points (after refining them)
-            self.objpoints.append(self.objp)
             
-            if ret_l == True:
+            
+            if ret_l == True and ret_r == True:
+                # If found, add object points, image points (after refining them)
+                self.objpoints.append(self.objp)
                 found_corners = True
                 rt = cv.cornerSubPix(gray_l, corners_l, (11,11), (-1,-1), criteria)
                 self.imgpoints_l.append(corners_l)
@@ -126,19 +127,14 @@ class Calibrator:
                 # Draw and display the corners
                 cv.drawChessboardCorners(img_l, (ROWS,COLS), corners_l, ret_l)
                 cv.imwrite(os.path.join(self.image_output_folder, f"cap_left_{filename}"), img_l)
-                # cv.imshow('img', img)
-                # cv.waitKey(500)
 
-            if ret_r == True:
-                found_corners = True
                 rt = cv.cornerSubPix(gray_r, corners_r, (11,11), (-1,-1), criteria)
                 self.imgpoints_r.append(corners_r)
 
                 # Draw and display the corners
                 cv.drawChessboardCorners(img_r, (ROWS,COLS), corners_r, ret_r)
                 cv.imwrite(os.path.join(self.image_output_folder, f"cap_right_{filename}"), img_r)
-                # cv.imshow('img', img)
-                # cv.waitKey(500)
+            
 
         if not found_corners:  
             print("No corners found...")
