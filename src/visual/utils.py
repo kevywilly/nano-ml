@@ -1,10 +1,12 @@
 import cv2 as cv
-from cv2 import Mat
+
 
 def bgr8_to_jpeg(value):
     return bytes(cv.imencode('.jpg', value)[1])
 
-def crop(img: Mat, pct: float):
+
+def crop(img, pct: float):
+
     if pct == 1.0:
         return img
 
@@ -13,6 +15,7 @@ def crop(img: Mat, pct: float):
     yfactor = int(h * fact / 2)
     xfactor = int(w * fact / 2)
     return img[yfactor:h - yfactor, xfactor:w - xfactor]
+
 
 def merge_3d(img_l, img_r):
     out = img_r.copy()
