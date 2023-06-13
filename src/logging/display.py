@@ -32,7 +32,7 @@ class Display(SingletonConfigurable):
     def start(self):
         print("Starting Display")
 
-        if (self.started):
+        if self.started:
             return
 
         self.event = Event()
@@ -44,9 +44,9 @@ class Display(SingletonConfigurable):
         if not self.started:
             return
 
-        if (self.event):
+        if self.event:
             self.event.set()
-        if (self.thread and self.thread.is_alive()):
+        if self.thread and self.thread.is_alive():
             self.thread.join(1)
 
         self.thread = None
@@ -81,13 +81,13 @@ class Display(SingletonConfigurable):
 
         while True:
             draw.rectangle((0, 0, width, height), outline=0, fill=0)
-            i = 0
+
             for (idx, text) in enumerate(self.value):
                 draw.text((x, top + (idx * 8)), text, font=font, fill=255)
             self.disp.image(image)
             self.disp.display()
             time.sleep(.1)
-            if (event.is_set()):
+            if event.is_set():
                 self.disp.clear()
                 self.disp.display()
                 print("Stopping Display")

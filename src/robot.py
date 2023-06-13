@@ -113,7 +113,7 @@ class Robot(SingletonConfigurable):
         for idx, speed in enumerate(speeds):
             self.motors[idx].value = speed
 
-    def forward(self, speed=0.3, duration=None):
+    def forward(self, speed=0.3):
         self.log(f"MV: Forward {speed}.")
         for motor in self.motors:
             motor.value = speed

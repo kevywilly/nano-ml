@@ -33,7 +33,8 @@ class Calibrator:
         self.imgpoints_l = []
         self.imgpoints_r = []
 
-    def _make_folder(self, folder):
+    @staticmethod
+    def _make_folder(folder):
         try:
             os.makedirs(folder)
         except FileExistsError:
@@ -45,14 +46,17 @@ class Calibrator:
     def _get_counts(self):
         self.stereo_count = self._get_count(cal.left_folder)
 
-    def _get_count(self, folder):
+    @staticmethod
+    def _get_count(folder):
         return len(os.listdir(folder))
 
-    def _write_image(self, image, folder: str, filename: str):
+    @staticmethod
+    def _write_image(image, folder: str, filename: str):
         pth = os.path.join(folder, filename)
         cv.imwrite(pth, img=image)
 
-    def _generate_filenamne(self):
+    @staticmethod
+    def _generate_filenamne():
         return f"{str(uuid1())}.png"
 
     def collect_stereo(self, image_right, image_left) -> int:
@@ -63,19 +67,22 @@ class Calibrator:
         self.stereo_count = self.stereo_count + 1
         return self.stereo_count
 
-    def _get_image_filenames(self):
+    @staticmethod
+    def _get_image_filenames():
         left = os.listdir(cal.left_folder)
         right = os.listdir(cal.right_folder)
         return [(left[i], right[i]) for i in range(0, len(left))]
 
-    def _get_stereo_filenames(self):
+    @staticmethod
+    def _get_stereo_filenames():
         filenames_l = os.listdir(cal.left_folder)
         filenames_r = os.listdir(cal.right_folder)
         filenames_l.sort()
         filenames_r.sort()
         return filenames_l, filenames_r
 
-    def _read_stereo(self, filename):
+    @staticmethod
+    def _read_stereo(filename):
         return (
             cv.imread(os.path.join(cal.left_folder, filename)),
             cv.imread(os.path.join(cal.right_folder, filename))
@@ -111,14 +118,14 @@ class Calibrator:
                 # If found, add object points, image points (after refining them)
                 self.objpoints.append(objp)
                 found_corners = True
-                rt = cv.cornerSubPix(gray_l, corners_l, (11, 11), (-1, -1), criteria)
+                _ = cv.cornerSubPix(gray_l, corners_l, (11, 11), (-1, -1), criteria)
                 self.imgpoints_l.append(corners_l)
 
                 # Draw and display the corners
                 cv.drawChessboardCorners(img_l, (ROWS, COLS), corners_l, ret_l)
                 cv.imwrite(os.path.join(cal.output_folder, f"cap_left_{filename}"), img_l)
 
-                rt = cv.cornerSubPix(gray_r, corners_r, (11, 11), (-1, -1), criteria)
+                _ = cv.cornerSubPix(gray_r, corners_r, (11, 11), (-1, -1), criteria)
                 self.imgpoints_r.append(corners_r)
 
                 # Draw and display the corners
@@ -397,10 +404,12 @@ class Calibrator:
 
         print('Done')
 
-    def get_images(self):
+    @staticmethod
+    def get_images():
         return os.listdir(cal.left_folder)
 
-    def load_image(self, camera: str, name: str):
+    @staticmethod
+    def load_image(camera: str, name: str):
         if camera.lower() == "left":
             folder = cal.left_folder
         else:
@@ -411,7 +420,8 @@ class Calibrator:
 
         return im_bytes_np.tobytes()
 
-    def delete_all_images(self):
+    @staticmethod
+    def delete_all_images():
         for filename in os.listdir(cal.left_folder):
             try:
                 os.remove(os.path.join(cal.left_folder, filename))
@@ -422,7 +432,8 @@ class Calibrator:
             except:
                 pass
 
-    def delete_image(self, name):
+    @staticmethod
+    def delete_image(name):
 
         try:
             os.remove(os.path.join(cal.left_folder, name))

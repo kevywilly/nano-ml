@@ -25,7 +25,8 @@ class Trainer(SingletonConfigurable):
         self.model = self.config.load_model(pretrained=(not self.retrain))
         atexit.register(self.clear_cuda)
 
-    def clear_cuda(self):
+    @staticmethod
+    def clear_cuda():
         torch.cuda.empty_cache()
 
     def train(self):

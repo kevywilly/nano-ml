@@ -22,7 +22,8 @@ class ImageMapper:
         # self.rm1 = cv.cuda_GpuMat(self.map3d.right_map_1)
         # self.rm2 = cv.cuda_GpuMat(self.map3d.right_map_2)
 
-    def crop(self, img, pct: float):
+    @staticmethod
+    def crop(img, pct: float):
         if pct == 1.0:
             return img
 
@@ -38,7 +39,8 @@ class ImageMapper:
 
         return img1, img2
 
-    def merge_3d(self, img_l, img_r):
+    @staticmethod
+    def merge_3d(img_l, img_r):
         out = img_r.copy()
         out[:, :, 0] = img_r[:, :, 0]
         out[:, :, 1] = img_r[:, :, 1]
@@ -68,9 +70,9 @@ class ImageMapper:
 
         return self.crop(mapped_r, 0.90)
 
-    def load_3d_map(self, filename: str) -> Map3d:
+    @staticmethod
+    def load_3d_map(filename: str) -> Map3d:
         cv_file = cv.FileStorage(filename, cv.FILE_STORAGE_READ)
-        cv_file
         m: Map3d = Map3d(
             left_map_1=cv_file.getNode("left_map_1").mat(),
             left_map_2=cv_file.getNode("left_map_2").mat(),
