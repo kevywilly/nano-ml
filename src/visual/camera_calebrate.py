@@ -1,11 +1,13 @@
-import numpy as np
-import cv2
-import glob
 import argparse
-from settings import settings
+import glob
+
+import cv2
+import numpy as np
 
 COLS = 8
 ROWS = 5
+
+
 class StereoCalibration(object):
     def __init__(self, filepath):
         # termination criteria
@@ -15,7 +17,7 @@ class StereoCalibration(object):
                              cv2.TERM_CRITERIA_MAX_ITER, 100, 1e-5)
 
         # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
-        self.objp = np.zeros((COLS*ROWS, 3), np.float32)
+        self.objp = np.zeros((COLS * ROWS, 3), np.float32)
         self.objp[:, :2] = np.mgrid[0:ROWS, 0:COLS].T.reshape(-1, 2)
 
         # Arrays to store object points and image points from all the images.
@@ -117,12 +119,13 @@ class StereoCalibration(object):
         print('')
 
         camera_model = dict([('M1', M1), ('M2', M2), ('dist1', d1),
-                            ('dist2', d2), ('rvecs1', self.r1),
-                            ('rvecs2', self.r2), ('R', R), ('T', T),
-                            ('E', E), ('F', F)])
+                             ('dist2', d2), ('rvecs1', self.r1),
+                             ('rvecs2', self.r2), ('R', R), ('T', T),
+                             ('E', E), ('F', F)])
 
         cv2.destroyAllWindows()
         return camera_model
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

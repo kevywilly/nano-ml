@@ -14,6 +14,17 @@ from src.training.config import (
     MecanumConfig
 )
 
+class CalibrationSettings(BaseSettings):
+    base_folder: str = "/ml_data/calibration"
+    model_folder: str = "/ml_data/calibration/models"
+    model_file: str = "/ml_data/calibration/models/camera_model.xml"
+    rectification_model_file: str = "/ml_data/calibration/models/rectification_model.xml"
+    d3_map_file: str = "/ml_data/calibration/models/3dmap.xml"
+
+    output_folder = f"{base_folder}/images/output"
+    right_folder = f"{base_folder}/images/stereo/right"
+    left_folder = f"{base_folder}/images/stereo/left"
+
 class AppSettings(BaseSettings):
 
     reverse_motors: bool = True
@@ -32,16 +43,6 @@ class AppSettings(BaseSettings):
     default_retrain_epochs: int = 10
     led_pins: List[int] = [200,38]
 
-    calibration_folder: str = "/ml_data/calibration"
-    calibration_model_folder: str = "/ml_data/calibration/models"
-    calibration_camera_model_file: str = "/ml_data/calibration/models/camera_model.xml"
-    calibration_rectification_model_file: str = "/ml_data/calibration/models/rectification_model.xml"
-    calibration_3d_map_file: str = "/ml_data/calibration/models/3dmap.xml"
-
-    calibration_image_output_folder = f"{calibration_folder}/images/output"
-    calibration_stereo_right_folder = f"{calibration_folder}/images/stereo/right"
-    calibration_stereo_left_folder = f"{calibration_folder}/images/stereo/left"
-
     cam_width: int = 640
     cam_height: int = 360
     cam_fps: float = 30
@@ -51,3 +52,4 @@ class AppSettings(BaseSettings):
     camera_model: CameraModel = None
 
 settings = AppSettings()
+calibration_settings = CalibrationSettings

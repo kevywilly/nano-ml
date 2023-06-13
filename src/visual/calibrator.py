@@ -2,11 +2,13 @@
 # https://github.com/bvnayak/stereo_calibration
 # https://learnopencv.com/making-a-low-cost-stereo-camera-using-opencv/
 
-from uuid import uuid1
 import os
-from settings import settings
+from uuid import uuid1
+
 import cv2 as cv
 import numpy as np
+
+from settings import calibration_settings as cal
 from src.visual.camera_model import CameraModel
 
 LEFT = 0
@@ -15,34 +17,21 @@ RIGHT = 1
 COLS = 8
 ROWS = 5
 
+
 class Calibrator:
 
     def __init__(self):
         self.stereo_count = 0
-        self.image_output_folder = f"{settings.calibration_folder}/images/output"
-        self.stereo_right_folder = f"{settings.calibration_folder}/images/stereo/right"
-        self.stereo_left_folder = f"{settings.calibration_folder}/images/stereo/left"
-        self.calibration_model_folder = settings.calibration_model_folder
-        self.calibration_3d_map_file = settings.calibration_3d_map_file
-        self.calibration_rectification_model_file = settings.calibration_rectification_model_file
-        self.calibration_camera_model_file = settings.calibration_camera_model_file
+        self._make_folder(cal.right_folder)
+        self._make_folder(cal.left_folder)
+        self._make_folder(cal.output_folder)
+        self._make_folder(cal.model_folder)
 
-        self._make_folder(self.stereo_right_folder)
-        self._make_folder(self.stereo_left_folder)
-        self._make_folder(self.image_output_folder)
-        self._make_folder(self.calibration_model_folder)
-        
         self._get_counts()
 
-        self.w = settings.cam_width
-        self.h = settings.cam_height
-
-        self.objpoints = [] # 3d point in real world space
+        self.objpoints = []  # 3d point in real world space
         self.imgpoints_l = []
         self.imgpoints_r = []
-
-        self.objp = np.zeros((COLS*ROWS,3), np.float32)
-        self.objp[:,:2] = np.mgrid[0:ROWS,0:COLS].T.reshape(-1,2)
 
     def _make_folder(self, folder):
         try:
@@ -54,57 +43,60 @@ class Calibrator:
             raise ex
 
     def _get_counts(self):
-        self.stereo_count = self._get_count(self.stereo_left_folder)
+        self.stereo_count = self._get_count(cal.left_folder)
 
     def _get_count(self, folder):
         return len(os.listdir(folder))
-    
+
     def _write_image(self, image, folder: str, filename: str):
         pth = os.path.join(folder, filename)
         cv.imwrite(pth, img=image)
 
     def _generate_filenamne(self):
         return f"{str(uuid1())}.png"
-    
+
     def collect_stereo(self, image_right, image_left) -> int:
         print("collecting stereo")
         filename = self._generate_filenamne()
-        self._write_image(image_right, self.stereo_right_folder, filename)
-        self._write_image(image_left, self.stereo_left_folder, filename)
+        self._write_image(image_right, cal.right_folder, filename)
+        self._write_image(image_left, cal.left_folder, filename)
         self.stereo_count = self.stereo_count + 1
         return self.stereo_count
 
     def _get_image_filenames(self):
-        left = os.listdir(self.stereo_left_folder)
-        right = os.listdir(self.stereo_right_folder)
-        return [(left[i],right[i])for i in range(0, len(left))]
-        
+        left = os.listdir(cal.left_folder)
+        right = os.listdir(cal.right_folder)
+        return [(left[i], right[i]) for i in range(0, len(left))]
 
     def _get_stereo_filenames(self):
-        filenames_l = os.listdir(self.stereo_left_folder)
-        filenames_r = os.listdir(self.stereo_right_folder)
+        filenames_l = os.listdir(cal.left_folder)
+        filenames_r = os.listdir(cal.right_folder)
         filenames_l.sort()
         filenames_r.sort()
         return filenames_l, filenames_r
-    
+
     def _read_stereo(self, filename):
         return (
-            cv.imread(os.path.join(self.stereo_left_folder,filename)), 
-            cv.imread(os.path.join(self.stereo_right_folder,filename))
+            cv.imread(os.path.join(cal.left_folder, filename)),
+            cv.imread(os.path.join(cal.right_folder, filename))
         )
-    
+
     def calibrate(self):
-        
+
         filenames_l, filenames_r = self._get_stereo_filenames()
 
         print(f'found {len(filenames_l)} files for Left Camera')
         print(f'found {len(filenames_r)} files for Right Camera')
-    
+
         criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
-        
+
         # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
-        
+
         found_corners = False
+
+        objp = np.zeros((COLS * ROWS, 3), np.float32)
+        objp[:, :2] = np.mgrid[0:ROWS, 0:COLS].T.reshape(-1, 2)
+
         for _, filename in enumerate(filenames_l):
 
             img_l, img_r = self._read_stereo(filename)
@@ -112,34 +104,31 @@ class Calibrator:
             gray_l = cv.cvtColor(img_l, cv.COLOR_BGR2GRAY)
             gray_r = cv.cvtColor(img_r, cv.COLOR_BGR2GRAY)
 
-            ret_l, corners_l = cv.findChessboardCorners(gray_l, (ROWS,COLS), None)
-            ret_r, corners_r = cv.findChessboardCorners(gray_r, (ROWS,COLS), None)
+            ret_l, corners_l = cv.findChessboardCorners(gray_l, (ROWS, COLS), None)
+            ret_r, corners_r = cv.findChessboardCorners(gray_r, (ROWS, COLS), None)
 
-            
-            
             if ret_l == True and ret_r == True:
                 # If found, add object points, image points (after refining them)
-                self.objpoints.append(self.objp)
+                self.objpoints.append(objp)
                 found_corners = True
-                rt = cv.cornerSubPix(gray_l, corners_l, (11,11), (-1,-1), criteria)
+                rt = cv.cornerSubPix(gray_l, corners_l, (11, 11), (-1, -1), criteria)
                 self.imgpoints_l.append(corners_l)
 
                 # Draw and display the corners
-                cv.drawChessboardCorners(img_l, (ROWS,COLS), corners_l, ret_l)
-                cv.imwrite(os.path.join(self.image_output_folder, f"cap_left_{filename}"), img_l)
+                cv.drawChessboardCorners(img_l, (ROWS, COLS), corners_l, ret_l)
+                cv.imwrite(os.path.join(cal.output_folder, f"cap_left_{filename}"), img_l)
 
-                rt = cv.cornerSubPix(gray_r, corners_r, (11,11), (-1,-1), criteria)
+                rt = cv.cornerSubPix(gray_r, corners_r, (11, 11), (-1, -1), criteria)
                 self.imgpoints_r.append(corners_r)
 
                 # Draw and display the corners
-                cv.drawChessboardCorners(img_r, (ROWS,COLS), corners_r, ret_r)
-                cv.imwrite(os.path.join(self.image_output_folder, f"cap_right_{filename}"), img_r)
-            
+                cv.drawChessboardCorners(img_r, (ROWS, COLS), corners_r, ret_r)
+                cv.imwrite(os.path.join(cal.output_folder, f"cap_right_{filename}"), img_r)
 
-        if not found_corners:  
+        if not found_corners:
             print("No corners found...")
-            return  
-                
+            return
+
         print("Calibrating camera")
 
         img_shape = gray_l.shape[::-1]
@@ -147,12 +136,12 @@ class Calibrator:
 
         rt1, self.M1, self.d1, self.r1, self.t1 = cv.calibrateCamera(
             self.objpoints, self.imgpoints_l, img_shape, None, None
-            )
-        
+        )
+
         rt2, self.M2, self.d2, self.r2, self.t2 = cv.calibrateCamera(
             self.objpoints, self.imgpoints_r, img_shape, None, None
-            )
-        
+        )
+
         print(f'Left Camera\n==============================')
         print(f'Left rmse:', {rt1})
         print(f'Left matrix left:\n {self.M1}')
@@ -166,37 +155,32 @@ class Calibrator:
         self.save_rectified_images(img_shape)
         return self.stereo_calibrate(img_shape)
 
+    def save_rectified_images(self, dims):
 
-    def save_rectified_images(self,dims):
-            
-        
-            print("saving rectified images")
+        print("saving rectified images")
 
-            filenames_l, filenames_r = self._get_stereo_filenames()
+        filenames_l, filenames_r = self._get_stereo_filenames()
 
-            newcameramtx_l, roi_l = cv.getOptimalNewCameraMatrix(self.M1, self.d1, dims, 1, dims)
-            newcameramtx_r, roi_r = cv.getOptimalNewCameraMatrix(self.M2, self.d2, dims, 1, dims)
-            
-            for idx, filename in enumerate(filenames_l):
-        
-                # get new camera matrix
-                img_l, img_r = self._read_stereo(filename)
+        newcameramtx_l, roi_l = cv.getOptimalNewCameraMatrix(self.M1, self.d1, dims, 1, dims)
+        newcameramtx_r, roi_r = cv.getOptimalNewCameraMatrix(self.M2, self.d2, dims, 1, dims)
 
-                dst_l = cv.undistort(img_l, self.M1, self.d1, None, newcameramtx_l)
-                # crop the image
-                x, y, w, h = roi_l
-                dst_l = dst_l[y:y+h, x:x+w]
+        for idx, filename in enumerate(filenames_l):
+            # get new camera matrix
+            img_l, img_r = self._read_stereo(filename)
 
-                dst_r = cv.undistort(img_r, self.M2, self.d2, None, newcameramtx_r)
-                # crop the image
-                x, y, w, h = roi_r
-                dst_r = dst_r[y:y+h, x:x+w]
-        
+            dst_l = cv.undistort(img_l, self.M1, self.d1, None, newcameramtx_l)
+            # crop the image
+            x, y, w, h = roi_l
+            dst_l = dst_l[y:y + h, x:x + w]
 
-                cv.imwrite(os.path.join(self.image_output_folder, f"cap_left_rectified_{filename}"), dst_l)
-                cv.imwrite(os.path.join(self.image_output_folder, f"cap_right_rectified_{filename}"), dst_r)
-            
-        
+            dst_r = cv.undistort(img_r, self.M2, self.d2, None, newcameramtx_r)
+            # crop the image
+            x, y, w, h = roi_r
+            dst_r = dst_r[y:y + h, x:x + w]
+
+            cv.imwrite(os.path.join(cal.output_folder, f"cap_left_rectified_{filename}"), dst_l)
+            cv.imwrite(os.path.join(cal.output_folder, f"cap_right_rectified_{filename}"), dst_r)
+
     def stereo_calibrate(self, dims):
         print(f"dims: {dims}")
         flags = 0
@@ -229,29 +213,29 @@ class Calibrator:
         print('E', E)
         print('F', F)
 
-        print(f"Saving rectify params ...... {self.calibration_rectification_model_file}")
-      
-        cv_file = cv.FileStorage(self.calibration_camera_model_file, cv.FILE_STORAGE_WRITE)
-        cv_file.write("M1",M1)
-        cv_file.write("dist1",d1)
-        cv_file.write("M2",M2)
-        cv_file.write("dist2",d2)
-        cv_file.write("R",R)
-        cv_file.write("T",T)
-        cv_file.write("E",E)
-        cv_file.write("F",F)
+        print(f"Saving rectify params ...... {cal.rectification_model_file}")
+
+        cv_file = cv.FileStorage(cal.model_file, cv.FILE_STORAGE_WRITE)
+        cv_file.write("M1", M1)
+        cv_file.write("dist1", d1)
+        cv_file.write("M2", M2)
+        cv_file.write("dist2", d2)
+        cv_file.write("R", R)
+        cv_file.write("T", T)
+        cv_file.write("E", E)
+        cv_file.write("F", F)
         cv_file.release()
 
         self.camera_model = CameraModel(
-            M1 = M1, M2 = M2, dist1 = self.d1, dist2 = self.d2, rvecs1 = self.r1, rvecs2 = self.r2, R = R, T = T, E = E, F = F
+            M1=M1, M2=M2, dist1=self.d1, dist2=self.d2, rvecs1=self.r1, rvecs2=self.r2, R=R, T=T, E=E, F=F
         )
-        
+
         print(" ")
         print(self.camera_model.dict())
 
         cv.destroyAllWindows()
         return self.camera_model
-        
+
     """
     def map_all_3d(self, map11, map12, map21, map22):
 
@@ -285,7 +269,6 @@ class Calibrator:
 
             cv.imwrite(os.path.join(settings.calibration_image_output_folder, f"3d_{filename}"),out)
     """
-    
 
     def rectify3d(self, model: CameraModel = None):
 
@@ -298,95 +281,90 @@ class Calibrator:
 
         img_l, img_r = self._read_stereo(filename)
         gray_l = cv.cvtColor(img_l, cv.COLOR_BGR2GRAY)
-        
-        (h,w) = img_l.shape[:2]
-        
+
+        (h, w) = img_l.shape[:2]
+
         rectify_scale = 0.94
 
         R1, R2, P1, P2, Q, roi1, roi2 = cv.stereoRectify(
-            model.M1, 
-            model.dist1, 
-            model.M2, 
-            model.dist2, 
-            (w,h),
+            model.M1,
+            model.dist1,
+            model.M2,
+            model.dist2,
+            (w, h),
             model.R,
             model.T,
             rectify_scale,
-            (0,0)
-            )
-        
-        print(f"Saving rectify params ...... {self.calibration_rectification_model_file}")
-      
-        cv_file = cv.FileStorage(self.calibration_rectification_model_file, cv.FILE_STORAGE_WRITE)
-        cv_file.write("R1",R1)
-        cv_file.write("R2",R2)
-        cv_file.write("P1",P1)
-        cv_file.write("P2",P2)
-        cv_file.write("Q",Q)
-        cv_file.write("roi1",roi1)
-        cv_file.write("roi2",roi2)
+            (0, 0)
+        )
+
+        print(f"Saving rectify params ...... {cal.rectification_model_file}")
+
+        cv_file = cv.FileStorage(cal.rectification_model_file, cv.FILE_STORAGE_WRITE)
+        cv_file.write("R1", R1)
+        cv_file.write("R2", R2)
+        cv_file.write("P1", P1)
+        cv_file.write("P2", P2)
+        cv_file.write("Q", Q)
+        cv_file.write("roi1", roi1)
+        cv_file.write("roi2", roi2)
         cv_file.release()
 
         left_map_1, left_map_2 = cv.initUndistortRectifyMap(
-            model.M1, 
-            model.dist1, 
-            R1, 
-            P1, 
-            gray_l.shape[::-1], 
+            model.M1,
+            model.dist1,
+            R1,
+            P1,
+            gray_l.shape[::-1],
             m1type=5
-            )
+        )
 
         right_map_1, right_map_2 = cv.initUndistortRectifyMap(
-            model.M2, 
-            model.dist2, 
+            model.M2,
+            model.dist2,
             R2,
-            P2, 
-            gray_l.shape[::-1], 
+            P2,
+            gray_l.shape[::-1],
             m1type=5
-            )
-        
-        print(f"Saving 3dmapping paraeters ...... {self.calibration_3d_map_file}")
-      
-        cv_file = cv.FileStorage(self.calibration_3d_map_file, cv.FILE_STORAGE_WRITE)
+        )
+
+        print(f"Saving 3dmapping paraeters ...... {cal.d3_map_file}")
+
+        cv_file = cv.FileStorage(cal.d3_map_file, cv.FILE_STORAGE_WRITE)
         cv_file.write("left_map_1", left_map_1)
-        cv_file.write("left_map_2",left_map_2)
-        cv_file.write("right_map_1",right_map_1)
-        cv_file.write("right_map_2",right_map_2)
+        cv_file.write("left_map_2", left_map_2)
+        cv_file.write("right_map_1", right_map_1)
+        cv_file.write("right_map_2", right_map_2)
         cv_file.release()
-        
-        
+
         mapped_l = cv.remap(img_l, left_map_1, left_map_2, cv.INTER_LANCZOS4)
         mapped_r = cv.remap(img_r, right_map_1, right_map_2, cv.INTER_LANCZOS4)
- 
-        
+
         out = mapped_r.copy()
-       
-        out[:,:,0] = mapped_r[:,:,0]
-        out[:,:,1] = mapped_r[:,:,1]
-        out[:,:,2] = mapped_l[:,:,2]
 
+        out[:, :, 0] = mapped_r[:, :, 0]
+        out[:, :, 1] = mapped_r[:, :, 1]
+        out[:, :, 2] = mapped_l[:, :, 2]
 
-        cv.imwrite(os.path.join(self.image_output_folder, f"out_{filename}"), out)
-        cv.imwrite(os.path.join(self.image_output_folder, f"left_{filename}"), mapped_l)
-        cv.imwrite(os.path.join(self.image_output_folder, f"right_{filename}"), mapped_r)
-
+        cv.imwrite(os.path.join(cal.output_folder, f"out_{filename}"), out)
+        cv.imwrite(os.path.join(cal.output_folder, f"left_{filename}"), mapped_l)
+        cv.imwrite(os.path.join(cal.output_folder, f"right_{filename}"), mapped_r)
 
         window_size = 3
         min_disp = 16
-        num_disp = 112-min_disp
-       
-        stereo = cv.StereoSGBM_create(minDisparity = min_disp,
-            numDisparities = num_disp,
-            blockSize = 16,
-            P1 = 8*3*window_size**2,
-            P2 = 32*3*window_size**2,
-            disp12MaxDiff = 1,
-            uniquenessRatio = 10,
-            speckleWindowSize = 100,
-            speckleRange = 32
-        )
+        num_disp = 112 - min_disp
 
-        
+        stereo = cv.StereoSGBM_create(minDisparity=min_disp,
+                                      numDisparities=num_disp,
+                                      blockSize=16,
+                                      P1=8 * 3 * window_size ** 2,
+                                      P2=32 * 3 * window_size ** 2,
+                                      disp12MaxDiff=1,
+                                      uniquenessRatio=10,
+                                      speckleWindowSize=100,
+                                      speckleRange=32
+                                      )
+
         print('computing disparity...')
 
         gray_l = cv.cvtColor(mapped_l, cv.COLOR_BGR2GRAY)
@@ -394,67 +372,66 @@ class Calibrator:
 
         disp = stereo.compute(gray_l, gray_r).astype(np.float32) / 16.0
 
-        print('generating 3d point cloud...',)
-        #h, w = mapped_l.shape[:2]
-        #f = 0.8*w                          # guess for focal length
-        #Q = np.float32([[1, 0, 0, -0.5*w],
+        print('generating 3d point cloud...', )
+        # h, w = mapped_l.shape[:2]
+        # f = 0.8*w                          # guess for focal length
+        # Q = np.float32([[1, 0, 0, -0.5*w],
         #                [0,-1, 0,  0.5*h], # turn points 180 deg around x-axis,
         #                [0, 0, 0,     -f], # so that y-axis looks up
         #                [0, 0, 1,      0]])
-        #points = cv.reprojectImageTo3D(disp, Q)
-        #colors = cv.cvtColor(imgL, cv.COLOR_BGR2RGB)
-        #mask = disp > disp.min()
-        #out_points = points[mask]
-        #out_colors = colors[mask]
-        #out_fn = 'out.ply'
-        #write_ply(out_fn, out_points, out_colors)
-        #print('%s saved' % out_fn)
+        # points = cv.reprojectImageTo3D(disp, Q)
+        # colors = cv.cvtColor(imgL, cv.COLOR_BGR2RGB)
+        # mask = disp > disp.min()
+        # out_points = points[mask]
+        # out_colors = colors[mask]
+        # out_fn = 'out.ply'
+        # write_ply(out_fn, out_points, out_colors)
+        # print('%s saved' % out_fn)
 
-        #cv.imshow('left', imgL)
-        #cv.imshow('disparity', (disp-min_disp)/num_disp)
-        #cv.waitKey()
+        # cv.imshow('left', imgL)
+        # cv.imshow('disparity', (disp-min_disp)/num_disp)
+        # cv.waitKey()
 
-        #cv.imwrite(os.path.join(self.image_output_folder, f"disp_1{filename}"), (disp-min_disp)/num_disp)
-        cv.imwrite(os.path.join(self.image_output_folder, f"disp_2{filename}"), disp)
-        
+        # cv.imwrite(os.path.join(cal.output_folder, f"disp_1{filename}"), (disp-min_disp)/num_disp)
+        cv.imwrite(os.path.join(cal.output_folder, f"disp_2{filename}"), disp)
+
         print('Done')
-    
+
     def get_images(self):
-        return os.listdir(self.stereo_left_folder)
-    
+        return os.listdir(cal.left_folder)
+
     def load_image(self, camera: str, name: str):
         if camera.lower() == "left":
-            folder = self.stereo_left_folder
+            folder = cal.left_folder
         else:
-            folder = self.stereo_right_folder
+            folder = cal.right_folder
 
-        im = cv.imread(os.path.join(folder,name), cv.IMREAD_ANYCOLOR)
-        _, im_bytes_np = cv.imencode('.png',im)
-    
+        im = cv.imread(os.path.join(folder, name), cv.IMREAD_ANYCOLOR)
+        _, im_bytes_np = cv.imencode('.png', im)
+
         return im_bytes_np.tobytes()
-    
+
     def delete_all_images(self):
-        for filename in os.listdir(self.stereo_left_folder):
+        for filename in os.listdir(cal.left_folder):
             try:
-                os.remove(os.path.join(self.stereo_left_folder, filename))
+                os.remove(os.path.join(cal.left_folder, filename))
             except:
                 pass
             try:
-                os.remove(os.path.join(self.stereo_right_folder, filename))
+                os.remove(os.path.join(cal.right_folder, filename))
             except:
                 pass
 
     def delete_image(self, name):
 
-
         try:
-            os.remove(os.path.join(self.stereo_left_folder,name))
+            os.remove(os.path.join(cal.left_folder, name))
         except:
             pass
 
         try:
-            os.remove(os.path.join(self.stereo_right_folder,name))
+            os.remove(os.path.join(cal.right_folder, name))
         except:
             pass
-        
+
         return True

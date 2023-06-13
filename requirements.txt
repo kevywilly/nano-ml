@@ -20,7 +20,6 @@ click==8.0.4
 cupy==9.2.0
 cycler==0.10.0
 Cython==0.29.28
-dataclasses==0.8
 decorator==5.1.1
 defusedxml==0.7.1
 distro==1.6.0
@@ -34,7 +33,6 @@ gast==0.3.3
 google-pasta==0.2.0
 grpcio==1.44.0
 h5py==2.10.0
-idna==3.3
 importlib-metadata==4.8.3
 ipykernel==5.5.6
 ipython==7.16.3
@@ -42,7 +40,6 @@ ipython-genutils==0.2.0
 ipywidgets==7.6.5
 itsdangerous==2.0.1
 jedi==0.17.2
-jetcam==0.0.0
 Jinja2==3.0.3
 joblib==1.1.0
 json5==0.9.6
@@ -147,16 +144,13 @@ sparkfun-top-phat-button==0.0.2
 sparkfun-ublox-gps==1.1.4
 spidev==3.6
 tensorboard==1.15.0
-tensorflow==1.15.5+nv22.1
 tensorflow-estimator==1.15.1
 termcolor==1.1.0
 terminado==0.13.0
 testpath==0.5.0
 threadpoolctl==3.1.0
 torch==1.10.0
-torch2trt==0.4.0
-torchaudio==0.10.0+d2634d8
-torchvision==0.11.0a0+fa347eb
+torchvision
 tornado==6.1
 traitlets==4.3.3
 typing-extensions==4.1.1
