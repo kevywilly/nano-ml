@@ -52,4 +52,4 @@ class AppSettings(BaseSettings):
     camera_model: CameraModel = None
 
 settings = AppSettings()
-calibration_settings = CalibrationSettings
+calibration_settings = CalibrationSettings()

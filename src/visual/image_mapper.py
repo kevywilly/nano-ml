@@ -3,8 +3,7 @@ from typing import Any
 import cv2 as cv
 from pydantic import BaseModel
 
-from settings import settings
-
+from settings import calibration_settings as cal
 
 class Map3d(BaseModel):
     left_map_1: Any
@@ -16,7 +15,7 @@ class Map3d(BaseModel):
 class ImageMapper:
 
     def __init__(self):
-        self.map3d = self.load_3d_map(settings.calibration_3d_map_file)
+        self.map3d = self.load_3d_map(cal.d3_map_file)
 
         # self.lm1 = cv.cuda_GpuMat(self.map3d.left_map_1)
         # self.lm2 = cv.cuda_GpuMat(self.map3d.left_map_2)
