@@ -32,6 +32,9 @@ RUN git clone https://github.com/kevywilly/nano-control
 RUN cp -r nano-control/build /var/www/build
 RUN rm -rf nano-control
 
+#RUN cd / && git clone https://github.com/kevywilly/nanobot.git \
+#  && mkdir build
+
 RUN chmod +x /nano_ml/api.py
 
 

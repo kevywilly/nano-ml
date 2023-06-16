@@ -152,4 +152,7 @@ echo "VOLUMES:" $VOLUMES
 # run the container
 sudo docker run --runtime nvidia -it --rm --network host \
 	$DISPLAY_DEVICE $V4L2_DEVICES $I2C_DEVICES \
-	$VOLUMES $USER_VOLUME $CONTAINER_IMAGE $USER_COMMAND
+	$VOLUMES $USER_VOLUME \
+	--volume $SSH_AUTH_SOCK:/ssh-agent --env SSH_AUTH_SOCK=/ssh-agent \
+	-p 1024:22 \
+	$CONTAINER_IMAGE $USER_COMMAND
