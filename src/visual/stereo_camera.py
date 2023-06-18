@@ -1,28 +1,52 @@
 import threading
 import numpy as np
 import traitlets
+import atexit
+
+from jetson_inference import detectNet as net
+from jetson_utils import (
+    videoSource,
+    cudaDeviceSynchronize
+    )
+import cv2 as cv
+import traitlets
+from src.visual.utils import merge_3d
+from jetson_utils import cudaMemcpy
+
+
 
 class StereoCamera(traitlets.HasTraits):
+    left_source = traitlets.Unicode(default_value="csi://0")
+    right_source = traitlets.Unicode(default_value="csi://1")
+    
+    value_right = traitlets.Any()
+    value_left = traitlets.Any()
 
-
-    width = traitlets.Integer(default_value=960)
-    height = traitlets.Integer(default_value=540)
-    format = traitlets.Unicode(default_value='bgr8')
-    running = traitlets.Bool(default_value=False)
-
-    def __init__(self, *args, **kwargs):
+    def __init__(self, callback_fn, *args, **kwargs):
         super(StereoCamera, self).__init__(*args, **kwargs)
+        self.height=720
+        self.width=1280
+        
+        self.value_left = np.empty((self.height, self.width, 3), dtype=np.uint8)
+        self.value_right = np.empty((self.height, self.width, 3), dtype=np.uint8)
+  
+        self.camera_left = videoSource(self.left_source)
+        self.camera_right = videoSource(self.right_source)
+        self.callback_fn = callback_fn
         self._running = False
 
+
     def _read(self):
-        """Blocking call to read frame from camera"""
-        raise NotImplementedError
+        self.value_left = self.camera_left.Capture()
+        self.value_right = self.camera_right.Capture()
+        self.callback_fn(self.value_left, self.value_right)
+        
 
     def read(self):
         if self._running:
             raise RuntimeError('Cannot read directly while camera is running')
         self._read()
-        return self.value_left, self.value_right, self.mvalue_left, self.mvalue_right, self.value_3d
+        return self.value_left, self.value_right
 
     def _capture_frames(self):
         while True:

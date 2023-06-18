@@ -15,11 +15,11 @@ from src.training.config import (
 )
 
 class CalibrationSettings(BaseSettings):
-    base_folder: str = "/ml_data/calibration"
-    model_folder: str = "/ml_data/calibration/models"
-    model_file: str = "/ml_data/calibration/models/camera_model.xml"
-    rectification_model_file: str = "/ml_data/calibration/models/rectification_model.xml"
-    d3_map_file: str = "/ml_data/calibration/models/3dmap.xml"
+    base_folder: str = "/home/nano/nano-ml/data/calibration"
+    model_folder: str = "/home/nano/nano-ml/data/calibration/models"
+    model_file: str = "/home/nano/nano-ml/data/calibration/models/camera_model.xml"
+    rectification_model_file: str = "/home/nano/nano-ml/data/calibration/models/rectification_model.xml"
+    d3_map_file: str = "/home/nano/nano-ml/data/calibration/models/3dmap.xml"
 
     output_folder = f"{base_folder}/images/output"
     right_folder = f"{base_folder}/images/stereo/right"

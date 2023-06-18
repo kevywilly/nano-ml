@@ -8,12 +8,12 @@ from settings import settings
 from src.logging.display import Display
 from src.motion.motor import Motor
 from src.visual.image import Image
-from src.visual.stereo_csi_camera import StereoCSICamera
-from src.visual.utils import bgr8_to_jpeg
+from src.visual.stereo_camera import StereoCamera
+from src.visual.utils import bgr8_to_jpeg, cuda_to_jpeg
 
 
 class Robot(SingletonConfigurable):
-    camera = traitlets.Instance(StereoCSICamera)
+    camera = traitlets.Instance(StereoCamera)
     logger = traitlets.Instance(Display)
     image_right = traitlets.Instance(Image)
     image_left = traitlets.Instance(Image)
@@ -52,6 +52,19 @@ class Robot(SingletonConfigurable):
 
         atexit.register(self.stop)
 
+    def _callback_fn(self, value_left, value_right):
+        
+        img_l = cuda_to_jpeg(value_left)
+        img_r = cuda_to_jpeg(value_right)
+
+        
+        self.image_right.value = img_r
+        self.mimage_right.value = img_r
+        self.image_3d.value = img_r
+        
+        self.image_left.value = img_l
+        self.mimage_left.value = img_l
+            
     def _start_motors(self):
 
         self.log("Starting motors...")
@@ -76,23 +89,18 @@ class Robot(SingletonConfigurable):
         self.mimage_left = Image()
         self.image_3d = Image()
 
-        self.camera = StereoCSICamera(
-            width=settings.cam_width,
-            height=settings.cam_height,
-            capture_width=settings.cam_capture_width,
-            capture_height=settings.cam_capture_height,
-            capture_fps=30
-        )
+        self.camera = StereoCamera(callback_fn=self._callback_fn)
 
         self.camera.read()
         self.camera.running = True
-
-        traitlets.dlink((self.camera, 'value_right'), (self.image_right, 'value'), transform=bgr8_to_jpeg)
-        traitlets.dlink((self.camera, 'value_left'), (self.image_left, 'value'), transform=bgr8_to_jpeg)
-        traitlets.dlink((self.camera, 'mvalue_right'), (self.mimage_right, 'value'), transform=bgr8_to_jpeg)
-        traitlets.dlink((self.camera, 'mvalue_left'), (self.mimage_left, 'value'), transform=bgr8_to_jpeg)
-        traitlets.dlink((self.camera, 'value_3d'), (self.image_3d, 'value'), transform=bgr8_to_jpeg)
-
+        '''
+        traitlets.dlink((self.camera, 'value_right'), (self.image_right, 'value'), transform=cuda_to_jpeg)
+        traitlets.dlink((self.camera, 'value_left'), (self.image_left, 'value'), transform=cuda_to_jpeg)
+        traitlets.dlink((self.camera, 'value_right'), (self.mimage_right, 'value'), transform=cuda_to_jpeg)
+        traitlets.dlink((self.camera, 'value_left'), (self.mimage_left, 'value'), transform=cuda_to_jpeg)
+        traitlets.dlink((self.camera, 'value_right'), (self.image_3d, 'value'), transform=cuda_to_jpeg)
+        '''
+        
         self.log("...done.")
 
     def shutdown(self):
