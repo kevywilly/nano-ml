@@ -9,7 +9,9 @@ from src.logging.display import Display
 from src.motion.motor import Motor
 from src.visual.image import Image
 from src.visual.stereo_camera import StereoCamera
-from src.visual.utils import bgr8_to_jpeg, cuda_to_jpeg
+from src.visual.utils import bgr8_to_jpeg, cuda_to_jpeg, merge_3d
+from jetson_utils import cudaImage, cudaMemcpy, cudaToNumpy, cudaAllocMapped, cudaConvertColor
+import numpy as np
 
 
 class Robot(SingletonConfigurable):
@@ -54,13 +56,16 @@ class Robot(SingletonConfigurable):
 
     def _callback_fn(self, value_left, value_right):
         
+        img_l_n = cudaMemcpy(value_left)
+        img_r_n = cudaMemcpy(value_right)
+
         img_l = cuda_to_jpeg(value_left)
         img_r = cuda_to_jpeg(value_right)
 
-        
         self.image_right.value = img_r
         self.mimage_right.value = img_r
-        self.image_3d.value = img_r
+
+        self.image_3d.value = bgr8_to_jpeg(merge_3d(img_l_n, img_r_n))
         
         self.image_left.value = img_l
         self.mimage_left.value = img_l
@@ -93,13 +98,7 @@ class Robot(SingletonConfigurable):
 
         self.camera.read()
         self.camera.running = True
-        '''
-        traitlets.dlink((self.camera, 'value_right'), (self.image_right, 'value'), transform=cuda_to_jpeg)
-        traitlets.dlink((self.camera, 'value_left'), (self.image_left, 'value'), transform=cuda_to_jpeg)
-        traitlets.dlink((self.camera, 'value_right'), (self.mimage_right, 'value'), transform=cuda_to_jpeg)
-        traitlets.dlink((self.camera, 'value_left'), (self.mimage_left, 'value'), transform=cuda_to_jpeg)
-        traitlets.dlink((self.camera, 'value_right'), (self.image_3d, 'value'), transform=cuda_to_jpeg)
-        '''
+        
         
         self.log("...done.")
 

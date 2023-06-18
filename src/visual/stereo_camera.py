@@ -1,45 +1,37 @@
 import threading
-import numpy as np
 import traitlets
-import atexit
+from traitlets.config.configurable import SingletonConfigurable
+from jetson_utils import videoSource
 
-from jetson_inference import detectNet as net
-from jetson_utils import (
-    videoSource,
-    cudaDeviceSynchronize
-    )
-import cv2 as cv
-import traitlets
-from src.visual.utils import merge_3d
-from jetson_utils import cudaMemcpy
+class StereoCamera(SingletonConfigurable):
 
-
-
-class StereoCamera(traitlets.HasTraits):
-    left_source = traitlets.Unicode(default_value="csi://0")
-    right_source = traitlets.Unicode(default_value="csi://1")
-    
-    value_right = traitlets.Any()
+    width = traitlets.Integer(default_value=1280, config=True)
+    height = traitlets.Integer(default_value=720, config=True)
+    left_source = traitlets.Unicode(default_value = "csi://0", config=True)
+    right_source = traitlets.Unicode(default_value = "csi://1", config=True)
+    running = traitlets.Bool(default_value=False)
     value_left = traitlets.Any()
+    value_right = traitlets.Any()
 
-    def __init__(self, callback_fn, *args, **kwargs):
+    def __init__(self, callback_fn = None, *args, **kwargs):
+
         super(StereoCamera, self).__init__(*args, **kwargs)
-        self.height=720
-        self.width=1280
-        
-        self.value_left = np.empty((self.height, self.width, 3), dtype=np.uint8)
-        self.value_right = np.empty((self.height, self.width, 3), dtype=np.uint8)
   
         self.camera_left = videoSource(self.left_source)
         self.camera_right = videoSource(self.right_source)
         self.callback_fn = callback_fn
+
+        self.value_left = self.camera_left.Capture()
+        self.value_right = self.camera_right.Capture()
+        
         self._running = False
 
 
     def _read(self):
         self.value_left = self.camera_left.Capture()
         self.value_right = self.camera_right.Capture()
-        self.callback_fn(self.value_left, self.value_right)
+        if self.callback_fn:
+            self.callback_fn(self.value_left, self.value_right)
         
 
     def read(self):
