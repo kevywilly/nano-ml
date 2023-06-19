@@ -1,0 +1,3 @@
+[submodule "nano-control"]
+	path = nano-control
+	url = git@github.com:kevywilly/nano-control.git
