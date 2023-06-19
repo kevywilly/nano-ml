@@ -1,20 +1,11 @@
 [Unit]
 Description=Nano ML.
-After=docker.service
-Requires=docker.service
+After=multi-user.target
  
 [Service]
 Type=simple
-ExecStartPre=-/usr/bin/docker exec %n stop
-ExecStartPre=-/usr/bin/docker rm %n
-ExecStartPre=-/bin/systemctl restart nvargus-daemon
-ExecStart=/usr/bin/docker run --runtime nvidia  --name %n \
---network host \
---rm \
---device /dev/video0 --device /dev/video1 --device /dev/i2c-0  --device /dev/i2c-1  \
--v /tmp/argus_socket:/tmp/argus_socket -v /ml_data:/ml_data  -v /home/nano:/nano  -v /sys:/sys \
-kevywilly/nano-ml:1.0
-ExecStop=/usr/bin/docker stop %n
+User=nano
+ExecStart=/usr/bin/python3 /home/nano/nano-ml/api.py
  
 [Install]
 WantedBy=multi-user.target
