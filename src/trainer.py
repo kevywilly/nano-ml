@@ -9,7 +9,7 @@ import traitlets
 from traitlets.config import SingletonConfigurable
 
 from settings import settings
-from src.training.config import TrainingConfig, MODELS_ROOT
+from src.config import TrainingConfig, MODELS_ROOT
 
 torch.hub.set_dir(MODELS_ROOT)
 

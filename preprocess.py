@@ -6,9 +6,9 @@ import torch.nn.functional as F
 import torchvision
 import traitlets
 from traitlets.config import SingletonConfigurable
-from src.visual.utils import (convert_color)
+from src.utils import (convert_color)
 from jetson_utils import cudaImage, cudaMemcpy, cudaToNumpy, cudaAllocMapped, cudaConvertColor, cudaDeviceSynchronize, cudaResize, videoSource
-from src.visual.utils import resize
+from src.utils import resize
 
 mean = 255.0 * np.array([0.485, 0.456, 0.406])
 stdev = 255.0 * np.array([0.229, 0.224, 0.225])

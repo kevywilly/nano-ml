@@ -5,10 +5,9 @@ from flask import Flask, render_template, Response, jsonify
 from flask_cors import CORS
 
 from settings import settings
-from src.motion.drive_model import DriveModel
+from src.autodrive import AutoDrive
 from src.robot import Robot
-from src.visual.calibrator import Calibrator
-from src.visual.collector import ImageCollector
+from src.collector import ImageCollector
 
 app = Flask(__name__)
 CORS(app)
@@ -18,14 +17,12 @@ cors = CORS(app, resource={
     }
 })
 
-app.image_collector = ImageCollector.instance(config=settings.default_model)
-app.drive_model = DriveModel.instance(config=settings.default_model)
+
 app.autodrive = False
-app.robot: Robot = Robot.instance()
+app.robot: Robot = Robot.instance(stereo=False)
 app.dir = 0
 app.speed = settings.robot_drive_speed
 app.turn_speed = settings.robot_turn_speed
-app.calibrator: Calibrator = Calibrator()
 
 
 def _autodrive(change):
@@ -33,7 +30,7 @@ def _autodrive(change):
         app.dir = 0
         return
 
-    y = app.drive_model.predict(change["new"])
+    y = app.robot.autodrive.predict(change["new"])
 
     forward = float(y.flatten()[0])
     left = float(y.flatten()[1])
@@ -49,11 +46,11 @@ def _autodrive(change):
         app.dir = 1
 
     if app.dir == 0:
-        app.robot.forward(app.speed)
+        app.robot.drivetrain.forward(app.speed)
     elif app.dir == -1:
-        app.robot.left(app.turn_speed)
+        app.robot.drivetrain.left(app.turn_speed)
     else:
-        app.robot.right(app.turn_speed)
+        app.robot.drivetrain.right(app.turn_speed)
 
 
 def _get_stream(img: str = "right"):
@@ -62,7 +59,7 @@ def _get_stream(img: str = "right"):
         try:
             yield (
                     b'--frame\r\n'
-                    b'Content-Type: image/jpeg\r\n\r\n' + app.robot.get_image() + b'\r\n'
+                    b'Content-Type: image/jpeg\r\n\r\n' + app.robot.get_image1() + b'\r\n'
             )  # concat frame one by one and show result
         except Exception as ex:
             pass
@@ -78,16 +75,16 @@ def toggle_autodrive():
     app.autodrive = not app.autodrive
 
     if (app.autodrive):
-        app.robot.stop
+        app.robot.drivetrain.stop
         app.dir = 0
-        app.robot.camera.observe(_autodrive, names='value')
+        app.robot.input.observe(_autodrive, names='value1')
     else:
         try:
-            app.robot.camera.unobserve(_autodrive)
+            app.robot.input.unobserve(_autodrive)
         except Exception as ex:
             print(ex)
         finally:
-            app.robot.stop()
+            app.robot.drivetrain.stop()
 
     return jsonify({"autodrive": app.autodrive})
 
@@ -99,17 +96,17 @@ def categories():
 
 @app.get('/api/categories/counts')
 def category_counts():
-    return jsonify([{"name": k, "count": v} for (k, v) in app.image_collector.counts.items()])
+    return jsonify([{"name": k, "count": v} for (k, v) in app.robot.collector.counts.items()])
 
 
 @app.get('/api/categories/<category>/images')
 def category_images(category: str):
-    return {"images": app.image_collector.get_images(category)}
+    return {"images": app.robot.collector.get_images(category)}
 
 
 @app.get('/api/categories/<category>/images/<name>')
 def get_image(category, name):
-    bytes_str = app.image_collector.load_image(category, name)
+    bytes_str = app.robot.collector.load_image(category, name)
     response = flask.make_response(bytes_str)
     response.headers.set('Content-Type', 'image/jpeg')
     return response
@@ -117,20 +114,20 @@ def get_image(category, name):
 
 @app.put('/api/categories/<category>/images/<name>/<category2>')
 def move_image(category, name, category2):
-    resp = app.image_collector.move_image(category, name, category2)
+    resp = app.robot.collector.move_image(category, name, category2)
     return {"status": resp}
 
 
 @app.delete('/api/categories/<category>/images/<name>')
 def delete_image(category, name):
-    resp = app.image_collector.delete_image(category, name)
+    resp = app.robot.collector.delete_image(category, name)
     return {"status": resp}
 
 
 @app.post('/api/categories/<category>/collect')
 def collect(category):
     try:
-        image = app.robot.image
+        image = app.robot.image1
         if image:
             return {category: app.image_collector.collect(category, image)}
         else:
@@ -156,65 +153,11 @@ def drive(cmd, speed):
     app.speed = speed
     app.turn_speed = speed
 
-    app.robot.drive(cmd, app.speed)
+    app.robot.drivetrain.drive(cmd, app.speed)
     return {
         "cmd": cmd,
         "speed": speed
     }
-
-
-@app.route('/api/calibration/images/count')
-def get_calibration_image_counts():
-    app.calibrator._get_counts()
-    return {
-        "count": app.calibrator.stereo_count
-    }
-
-
-@app.route('/api/calibration/images/collect')
-def collect_calibration_image():
-    count = 0
-    try:
-        image_left = app.robot.camera.value_left
-        image_right = app.robot.camera.value_right
-        if image_left is not None and image_right is not None:
-            count = app.calibrator.collect_stereo(image_left=image_left, image_right=image_right)
-        else:
-            count = app.calibrator.stereo_count
-
-    except Exception as ex:
-        print(ex)
-
-    return {"count": count}
-
-
-@app.get('/api/calibration/images')
-def get_calibration_images():
-    return {"images": app.calibrator.get_images()}
-
-
-@app.delete('/api/calibration/images')
-def delete_calibration_images():
-    return {"status": app.calibrator.delete_all_images()}
-
-
-@app.delete('/api/calibration/images/<name>')
-def delete_calibration_image(name):
-    return {"status": app.calibrator.delete_image(name)}
-
-
-@app.get('/api/calibration/<cam>/images/<name>')
-def get_calibration_image(cam: str, name: str):
-    bytes_str = app.calibrator.load_image(cam, name)
-    response = flask.make_response(bytes_str)
-    response.headers.set('Content-Type', 'image/png')
-    return response
-
-
-@app.get('/api/calibration/calibrate')
-def calibrate():
-    app.calibrator.rectify3d()
-    return {"status": True}
 
 
 if __name__ == "__main__":

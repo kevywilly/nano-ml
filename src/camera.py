@@ -14,29 +14,42 @@ sudo make install
 
 
 class Camera(SingletonConfigurable):
+    stereo = traitlets.Bool(default_value=False, config=True)
     width = traitlets.Integer(default_value=1280, config=True)
     height = traitlets.Integer(default_value=720, config=True)
-    source = traitlets.Unicode(default_value="csi://0", config=True)
+    source1 = traitlets.Unicode(default_value="csi://0", config=True)
+    source2 = traitlets.Unicode(default_value="csi://1", config=True)
     running = traitlets.Bool(default_value=False)
-    camera = traitlets.Any()
-    value = traitlets.Any()
+    input1 = traitlets.Any()
+    input2 = traitlets.Any(allow_none=True)
+    value1 = traitlets.Any()
+    value2 = traitlets.Any(allow_none=True)
 
     def __init__(self, *args, **kwargs):
 
         super(Camera, self).__init__(*args, **kwargs)
-        self.camera = videoSource(self.source, argv=['--input-flip=rotate-180'])
+        self.input1 = videoSource(self.source1, argv=['--input-flip=rotate-180'])
+
+        if self.stereo:
+            self.input2 = videoSource(self.source2, argv=['--input-flip=rotate-180'])
+
         self._running = False
 
     def _read(self):
-        img = self.camera.Capture()
+        img = self.input1.Capture()
         if img is not None:
-            self.value = img
+            self.value1 = img
+
+        if self.stereo:
+            img2 = self.input2.Capture
+            if self.img2 is not None:
+                self.value2 = img
 
     def read(self):
         if self._running:
             raise RuntimeError('Cannot read directly while camera is running')
         self._read()
-        return self.value
+        return self.value1, self.value2
 
     def _capture_frames(self):
         while True:
@@ -46,7 +59,7 @@ class Camera(SingletonConfigurable):
 
     @traitlets.observe('running')
     def _on_running(self, change):
-        if not self.camera.IsStreaming():
+        if not self.input1.IsStreaming():
             self.running = False
             self.thread.join()
 

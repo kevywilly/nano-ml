@@ -1,11 +1,10 @@
 from pydantic import BaseSettings
 from typing import List
 
-from src.training.config import TrainingConfig
-from src.visual.camera_model import CameraModel
+from src.config import TrainingConfig
 from numpy import array
 
-from src.training.config import (
+from src.config import (
     Obstacle2dConfig, 
     Obstacle3dConfig, 
     Navigate2dConfig, 
@@ -48,8 +47,6 @@ class AppSettings(BaseSettings):
     cam_fps: float = 30
     cam_capture_width: int = 1920
     cam_capture_height:int = 1080
-
-    camera_model: CameraModel = None
 
 settings = AppSettings()
 calibration_settings = CalibrationSettings()

@@ -7,7 +7,7 @@ from typing import List
 import PIL
 from categories import _IMAGENET_CATEGORIES
 from settings import settings
-from src.training.config import TrainingConfig, MODELS_ROOT
+from src.config import TrainingConfig, MODELS_ROOT
 
 torch.hub.set_dir(MODELS_ROOT)
 

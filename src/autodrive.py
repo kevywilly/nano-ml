@@ -8,12 +8,12 @@ import torch.nn.functional as F
 import torchvision
 import traitlets
 from traitlets.config import SingletonConfigurable
-from src.visual.utils import (convert_color)
+from src.utils import (convert_color)
 from jetson_utils import cudaImage, cudaMemcpy, cudaToNumpy, cudaAllocMapped, cudaConvertColor, cudaDeviceSynchronize, cudaResize
-from src.visual.utils import resize
+from src.utils import resize
 
 from settings import settings
-from src.training.config import TrainingConfig, MODELS_ROOT
+from src.config import TrainingConfig, MODELS_ROOT
 
 torch.hub.set_dir(MODELS_ROOT)
 
@@ -21,11 +21,11 @@ SPEED_DRIVE = settings.robot_drive_speed
 SPEED_TURN = settings.robot_turn_speed
 
 
-class DriveModel(SingletonConfigurable):
+class AutoDrive(SingletonConfigurable):
     config = traitlets.Instance(TrainingConfig, default_value=settings.default_model).tag(config=True)
 
     def __init__(self, *args, **kwargs):
-        super(DriveModel, self).__init__(*args, **kwargs)
+        super(AutoDrive, self).__init__(*args, **kwargs)
         self.mean = 255.0 * np.array([0.485, 0.456, 0.406])
         self.stdev = 255.0 * np.array([0.229, 0.224, 0.225])
         self.normalize = torchvision.transforms.Normalize(self.mean, self.stdev)

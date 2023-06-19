@@ -6,8 +6,8 @@ import traitlets
 from traitlets.config import SingletonConfigurable
 
 from settings import settings
-from src.training.config import TrainingConfig
-from src.visual.image import Image
+from src.config import TrainingConfig
+from src.image import Image
 
 
 class ImageCollector(SingletonConfigurable):
