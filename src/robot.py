@@ -8,21 +8,17 @@ from settings import settings
 from src.logging.display import Display
 from src.motion.motor import Motor
 from src.visual.image import Image
-from src.visual.stereo_camera import StereoCamera
+from src.visual.camera import Camera
 from src.visual.utils import bgr8_to_jpeg, cuda_to_jpeg, merge_3d
-from jetson_utils import cudaImage, cudaMemcpy, cudaToNumpy, cudaAllocMapped, cudaConvertColor
+from jetson_utils import cudaImage, cudaMemcpy, cudaToNumpy, cudaAllocMapped, cudaConvertColor, cudaDeviceSynchronize
 import numpy as np
 
 
 class Robot(SingletonConfigurable):
-    camera = traitlets.Instance(StereoCamera)
+    camera = traitlets.Instance(Camera)
     logger = traitlets.Instance(Display)
-    image_right = traitlets.Instance(Image)
-    image_left = traitlets.Instance(Image)
-    image_3d = traitlets.Instance(Image)
-    mimage_right = traitlets.Instance(Image)
-    mimage_left = traitlets.Instance(Image)
-
+    image = traitlets.Instance(Image)
+    
     m1 = traitlets.Instance(Motor)
     m2 = traitlets.Instance(Motor)
     m3 = traitlets.Instance(Motor, allow_none=True)
@@ -48,28 +44,22 @@ class Robot(SingletonConfigurable):
 
         self.logger = Display()
         self.log("Starting robot...")
-        self._start_cameras()
+        self._start_camera()
         self._start_motors()
         self.log("...robot started.")
 
+        
+
         atexit.register(self.stop)
-
-    def _callback_fn(self, value_left, value_right):
         
-        img_l_n = cudaMemcpy(value_left)
-        img_r_n = cudaMemcpy(value_right)
-
-        img_l = cuda_to_jpeg(value_left)
-        img_r = cuda_to_jpeg(value_right)
-
-        self.image_right.value = img_r
-        self.mimage_right.value = img_r
-
-        self.image_3d.value = bgr8_to_jpeg(merge_3d(img_l_n, img_r_n))
-        
-        self.image_left.value = img_l
-        self.mimage_left.value = img_l
             
+    def _callback_fn(self, value):
+        #img = cudaMemcpy(value)
+        #cudaDeviceSynchronize()
+        self.image.value = cuda_to_jpeg(value)
+        cudaDeviceSynchronize()
+        #del img
+
     def _start_motors(self):
 
         self.log("Starting motors...")
@@ -84,21 +74,19 @@ class Robot(SingletonConfigurable):
 
         self.log("...done.")
 
-    def _start_cameras(self):
+    def _start_camera(self):
 
-        self.log("Starting cameras...")
+        self.log("Starting camera...")
 
-        self.image_right = Image()
-        self.image_left = Image()
-        self.mimage_right = Image()
-        self.mimage_left = Image()
-        self.image_3d = Image()
+        self.image = Image()
 
-        self.camera = StereoCamera(callback_fn=self._callback_fn)
-
-        self.camera.read()
-        self.camera.running = True
+        self.camera = Camera()
         
+        self.camera.read()
+
+        self.camera.running = True
+
+        traitlets.dlink((self.camera, 'value'), (self.image, 'value'), transform=cuda_to_jpeg)
         
         self.log("...done.")
 
@@ -107,14 +95,8 @@ class Robot(SingletonConfigurable):
         self.stop()
         self.camera.release()
 
-    def get_images(self):
-        return {
-            "left": self.image_left.value,
-            "right": self.image_right.value,
-            "mleft": self.mimage_left.value,
-            "mright": self.mimage_right.value,
-            "3d": self.image_3d.value
-        }
+    def get_image(self):
+        return self.image.value
 
     def set_motors(self, speeds):
         for idx, speed in enumerate(speeds):

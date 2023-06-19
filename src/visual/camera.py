@@ -1,69 +1,61 @@
-import atexit
+import threading
 
-import numpy as np
 import traitlets
+from jetson_utils import videoSource
 from traitlets.config.configurable import SingletonConfigurable
 
-from src.visual.image import Image
-from src.visual.stereo_csi_camera import StereoCSICamera
-from src.visual.utils import bgr8_to_jpeg
+'''
+# must disable NVMM
+cd jetson-inference/build
+cmake -DENABLE_NVMM=off ../
+make
+sudo make install
+'''
 
 
 class Camera(SingletonConfigurable):
-    value0 = traitlets.Any()
-    value1 = traitlets.Any()
-    vconcat = traitlets.Any()
-    image0 = traitlets.Any()
-    image1 = traitlets.Any()
-    iconcat = traitlets.Any()
+    width = traitlets.Integer(default_value=1280, config=True)
+    height = traitlets.Integer(default_value=720, config=True)
+    source = traitlets.Unicode(default_value="csi://0", config=True)
+    running = traitlets.Bool(default_value=False)
     camera = traitlets.Any()
-
-    # config
-    width = traitlets.Integer(default_value=224).tag(config=True)
-    height = traitlets.Integer(default_value=224).tag(config=True)
-    fps = traitlets.Integer(default_value=30).tag(config=True)
-    capture_width = traitlets.Integer(default_value=816).tag(config=True)
-    capture_height = traitlets.Integer(default_value=616).tag(config=True)
+    value = traitlets.Any()
 
     def __init__(self, *args, **kwargs):
+
         super(Camera, self).__init__(*args, **kwargs)
-        self.value0 = np.empty((self.height, self.width, 3), dtype=np.uint8)
-        self.value1 = np.empty((self.height, self.width, 3), dtype=np.uint8)
-        self.vconcat = np.empty((self.height, self.width, 3), dtype=np.uint8)
-        self.camera_link = None
+        self.camera = videoSource(self.source, argv=['--input-flip=rotate-180'])
+        self._running = False
 
-        atexit.register(self.stop)
+    def _read(self):
+        img = self.camera.Capture()
+        if img is not None:
+            self.value = img
 
-    def start(self):
-        if self.camera:
-            return
+    def read(self):
+        if self._running:
+            raise RuntimeError('Cannot read directly while camera is running')
+        self._read()
+        return self.value
 
-        print(f"Starting Camera")
+    def _capture_frames(self):
+        while True:
+            if not self._running:
+                break
+            self._read()
 
-        self.camera = StereoCSICamera(
-            width=self.width,
-            height=self.height,
-            capture_width=self.capture_width,
-            capture_height=self.capture_height,
-            capture_fps=30
-        )
+    @traitlets.observe('running')
+    def _on_running(self, change):
+        if not self.camera.IsStreaming():
+            self.running = False
+            self.thread.join()
 
-        self.image0 = Image()
-        self.image1 = Image()
-        self.iconcat = Image()
-
-        traitlets.dlink((self.camera, 'value0'), (self, 'value0'))
-        traitlets.dlink((self.camera, 'value0'), (self.image0, 'value'), transform=bgr8_to_jpeg)
-        traitlets.dlink((self.camera, 'value1'), (self, 'value1'))
-        traitlets.dlink((self.camera, 'value1'), (self.image1, 'value'), transform=bgr8_to_jpeg)
-        traitlets.dlink((self.camera, 'vconcat'), (self, 'vconcat'))
-        traitlets.dlink((self.camera, 'vconcat'), (self.iconcat, 'value'), transform=bgr8_to_jpeg)
-
-        self.camera.read()
-
-        self.camera.running = True
-
-    def stop(self):
-        print("\nReleasing camera...\n")
-        self.camera.running = False
-        self.camera.release()
+        if change['new'] and not change['old']:
+            # transition from not running -> running
+            self._running = True
+            self.thread = threading.Thread(target=self._capture_frames)
+            self.thread.start()
+        elif change['old'] and not change['new']:
+            # transition from running -> not running
+            self._running = False
+            self.thread.join()

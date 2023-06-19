@@ -8,6 +8,9 @@ import torch.nn.functional as F
 import torchvision
 import traitlets
 from traitlets.config import SingletonConfigurable
+from src.visual.utils import (convert_color)
+from jetson_utils import cudaImage, cudaMemcpy, cudaToNumpy, cudaAllocMapped, cudaConvertColor, cudaDeviceSynchronize, cudaResize
+from src.visual.utils import resize
 
 from settings import settings
 from src.training.config import TrainingConfig, MODELS_ROOT
@@ -60,13 +63,10 @@ class DriveModel(SingletonConfigurable):
         print("model ready...")
 
     def _preprocess(self, camera_value):
-        x = camera_value
-        x = cv2.cvtColor(x, cv2.COLOR_BGR2RGB)
-        x = cv2.resize(x, (224, 224))
-        x = x.transpose((2, 0, 1))
-        x = torch.from_numpy(x).float()
+        x = resize(camera_value, 224, 224)
+        x = np.transpose(x, (2, 0, 1))
+        x = torch.as_tensor(x, device='cuda').float()
         x = self.normalize(x)
-        x = x.to(self.device)
         x = x[None, ...]
         return x
 
