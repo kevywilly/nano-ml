@@ -7,12 +7,10 @@ import torchvision.datasets as datasets
 import torchvision.transforms as transforms
 import traitlets
 from traitlets.config import SingletonConfigurable
-
 from settings import settings
 from src.config import TrainingConfig, MODELS_ROOT
 
 torch.hub.set_dir(MODELS_ROOT)
-
 
 class Trainer(SingletonConfigurable):
     config = traitlets.Instance(TrainingConfig, default_value=settings.default_model).tag(config=True)
@@ -114,4 +112,4 @@ class Trainer(SingletonConfigurable):
 
 
 if __name__ == "__main__":
-    print("hello")
+    print("Hello Trainer")

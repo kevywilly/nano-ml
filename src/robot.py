@@ -1,25 +1,20 @@
 import atexit
-
 import traitlets
-from Adafruit_MotorHAT import Adafruit_MotorHAT
 from traitlets.config.configurable import SingletonConfigurable
-
 from settings import settings
 from src.display import Display
-from src.motor import Motor
 from src.image import Image
 from src.camera import Camera
 from src.drivetrain import Drivetrain
 from src.autodrive import AutoDrive
 from src.collector import ImageCollector
-from src.utils import bgr8_to_jpeg, cuda_to_jpeg, merge_3d, detect
+from src.utils import cuda_to_jpeg, detect
 from jetson_utils import Log
 import numpy as np
 
 
 class Robot(SingletonConfigurable):
 
-    
     drivetrain = traitlets.Instance(Drivetrain)
     input = traitlets.Instance(Camera)
     collector = traitlets.Instance(ImageCollector)
@@ -29,10 +24,10 @@ class Robot(SingletonConfigurable):
     image1 = traitlets.Instance(Image)
     image2 = traitlets.Instance(Image,allow_None = True)
     detected = traitlets.Instance(Image)
-    
 
     def log(self, text):
         self.logger.log(text)
+
 
     def __init__(self, *args, **kwargs):
 
@@ -73,6 +68,7 @@ class Robot(SingletonConfigurable):
     def get_image1(self):
         return self.image1.value if self.image1 else None
     
+
     def get_image2(self):
         return self.image2.value if self.image2 else None
 

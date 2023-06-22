@@ -1,17 +1,10 @@
 import atexit
-
 import traitlets
 from Adafruit_MotorHAT import Adafruit_MotorHAT
 from traitlets.config.configurable import SingletonConfigurable
-
 from settings import settings
 from src.display import Display
 from src.motor import Motor
-from src.image import Image
-from src.camera import Camera
-from src.utils import bgr8_to_jpeg, cuda_to_jpeg, merge_3d
-from jetson_utils import cudaImage, cudaMemcpy, cudaToNumpy, cudaAllocMapped, cudaConvertColor, cudaDeviceSynchronize
-import numpy as np
 
 class Drivetrain(SingletonConfigurable):
     m1 = traitlets.Instance(Motor)
@@ -29,7 +22,6 @@ class Drivetrain(SingletonConfigurable):
     m3_alpha = traitlets.Float(default_value=settings.m3_alpha).tag(config=True)
     m4_channel = traitlets.Integer(default_value=4).tag(config=True)
     m4_alpha = traitlets.Float(default_value=settings.m4_alpha).tag(config=True)
-
 
     def __init__(self, *args, **kwargs):
         super(Drivetrain, self).__init__(*args, **kwargs)

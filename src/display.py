@@ -1,7 +1,6 @@
 import atexit
 import time
 from threading import Event, Thread
-
 import Adafruit_SSD1306
 import traitlets
 from PIL import Image

@@ -1,9 +1,7 @@
 import atexit
-
 import traitlets
 from Adafruit_MotorHAT import Adafruit_MotorHAT
 from traitlets.config.configurable import Configurable
-
 from settings import settings
 
 

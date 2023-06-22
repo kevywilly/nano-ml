@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-# https://maker.pro/nvidia-jetson/tutorial/how-to-use-gpio-pins-on-jetson-nano-developer-kit
 import flask
 from flask import Flask, render_template, Response, jsonify
 from flask_cors import CORS

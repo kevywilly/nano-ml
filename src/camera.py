@@ -1,17 +1,7 @@
 import threading
-
 import traitlets
 from jetson_utils import videoSource
 from traitlets.config.configurable import SingletonConfigurable
-
-'''
-# must disable NVMM
-cd jetson-inference/build
-cmake -DENABLE_NVMM=off ../
-make
-sudo make install
-'''
-
 
 class Camera(SingletonConfigurable):
     stereo = traitlets.Bool(default_value=False, config=True)
@@ -35,6 +25,7 @@ class Camera(SingletonConfigurable):
 
         self._running = False
 
+
     def _read(self):
         img = self.input1.Capture()
         if img is not None:
@@ -47,17 +38,20 @@ class Camera(SingletonConfigurable):
             if self.img2 is not None:
                 self.value2 = img
 
+
     def read(self):
         if self._running:
             raise RuntimeError('Cannot read directly while camera is running')
         self._read()
         return self.value1, self.value2
 
+
     def _capture_frames(self):
         while True:
             if not self._running:
                 break
             self._read()
+
 
     @traitlets.observe('running')
     def _on_running(self, change):

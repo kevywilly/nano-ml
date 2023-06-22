@@ -1,6 +1,5 @@
 from typing import List
 from typing import Optional, Any
-
 import torchvision
 from pydantic import BaseModel
 
@@ -8,7 +7,6 @@ DATA_ROOT: str = "/home/nano/nano-ml/data"
 DATASETS_ROOT: str = f"{DATA_ROOT}/datasets"
 MODELS_ROOT: str = f"{DATA_ROOT}/models"
 BEST_MODELS_ROOT: str = f"{MODELS_ROOT}/best"
-
 
 class TrainingConfig(BaseModel):
     name: str

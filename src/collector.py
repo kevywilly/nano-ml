@@ -1,14 +1,12 @@
 import os
+from pathlib import Path
 from uuid import uuid1
-
 import cv2
 import traitlets
 from traitlets.config import SingletonConfigurable
-
 from settings import settings
 from src.config import TrainingConfig
 from src.image import Image
-
 
 class ImageCollector(SingletonConfigurable):
     counts = traitlets.Dict()
@@ -55,8 +53,8 @@ class ImageCollector(SingletonConfigurable):
         return -1
 
     def get_images(self, category):
-
-        resp = os.listdir(self.category_path(category))
+        paths = sorted(Path(self.category_path(category)).iterdir(), key=os.path.getctime)
+        return [p.name for p in paths]
 
         return resp
 
