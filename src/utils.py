@@ -1,6 +1,22 @@
 import cv2 as cv
 from jetson_utils import cudaImage, cudaMemcpy, cudaToNumpy, cudaAllocMapped, cudaConvertColor, cudaDeviceSynchronize, cudaResize
 
+from jetson_inference import detectNet
+import sys
+
+overlay = "box,labels,conf"
+model = "ssd-mobilenet-v2"
+threshold = 0.5
+net = detectNet(model, sys.argv, threshold)
+
+def detect(img: cudaImage):
+    try:
+        detections = net.Detect(img, overlay=overlay)
+        print("detected {:d} objects in image".format(len(detections)))
+        return cuda_to_jpeg(img)
+    except Exception as ex:
+        print(ex)
+
 def convert_color(img:cudaImage, output_format):
     converted_img = cudaAllocMapped(width=img.width, height=img.height, format=output_format)
     cudaConvertColor(img, converted_img)

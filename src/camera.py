@@ -39,6 +39,8 @@ class Camera(SingletonConfigurable):
         img = self.input1.Capture()
         if img is not None:
             self.value1 = img
+        else:
+            print("invalid capture")
 
         if self.stereo:
             img2 = self.input2.Capture

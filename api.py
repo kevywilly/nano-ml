@@ -3,11 +3,10 @@
 import flask
 from flask import Flask, render_template, Response, jsonify
 from flask_cors import CORS
-
 from settings import settings
-from src.autodrive import AutoDrive
 from src.robot import Robot
-from src.collector import ImageCollector
+from src.utils import cuda_to_jpeg
+from src.image import Image
 
 app = Flask(__name__)
 CORS(app)
@@ -18,39 +17,11 @@ cors = CORS(app, resource={
 })
 
 
-app.autodrive = False
+app.autodrive_is_on = False
 app.robot: Robot = Robot.instance(stereo=False)
 app.dir = 0
 app.speed = settings.robot_drive_speed
 app.turn_speed = settings.robot_turn_speed
-
-
-def _autodrive(change):
-    if not app.autodrive:
-        app.dir = 0
-        return
-
-    y = app.robot.autodrive.predict(change["new"])
-
-    forward = float(y.flatten()[0])
-    left = float(y.flatten()[1])
-    right = float(y.flatten()[2])
-
-    print(f"f: {forward}, l: {left}, r: {right}")
-
-    if (left + right) < 0.5:
-        app.dir = 0
-    elif (left > right and app.dir == 0):
-        app.dir = -1
-    elif app.dir == 0:
-        app.dir = 1
-
-    if app.dir == 0:
-        app.robot.drivetrain.forward(app.speed)
-    elif app.dir == -1:
-        app.robot.drivetrain.left(app.turn_speed)
-    else:
-        app.robot.drivetrain.right(app.turn_speed)
 
 
 def _get_stream(img: str = "right"):
@@ -72,26 +43,14 @@ def index():
 
 @app.route('/api/autodrive')
 def toggle_autodrive():
-    app.autodrive = not app.autodrive
-
-    if (app.autodrive):
-        app.robot.drivetrain.stop
-        app.dir = 0
-        app.robot.input.observe(_autodrive, names='value1')
-    else:
-        try:
-            app.robot.input.unobserve(_autodrive)
-        except Exception as ex:
-            print(ex)
-        finally:
-            app.robot.drivetrain.stop()
-
-    return jsonify({"autodrive": app.autodrive})
+    app.robot.autodrive.running = not app.robot.autodrive.running
+    
+    return jsonify({"autodrive": app.robot.autodrive.running})
 
 
 @app.get('/api/categories')
 def categories():
-    return jsonify(app.image_collector.categories)
+    return jsonify(app.robot.collector.categories)
 
 
 @app.get('/api/categories/counts')
@@ -127,9 +86,10 @@ def delete_image(category, name):
 @app.post('/api/categories/<category>/collect')
 def collect(category):
     try:
-        image = app.robot.image1
-        if image:
-            return {category: app.image_collector.collect(category, image)}
+        image = Image()
+        image.value = cuda_to_jpeg(app.robot.input.value1)
+        if image.value:
+            return {category: app.robot.collector.collect(category, image)}
         else:
             return {category: -1}
     except Exception as ex:

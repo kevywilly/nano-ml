@@ -14,6 +14,7 @@ from src.utils import resize
 
 from settings import settings
 from src.config import TrainingConfig, MODELS_ROOT
+from src.drivetrain import Drivetrain
 
 torch.hub.set_dir(MODELS_ROOT)
 
@@ -23,9 +24,13 @@ SPEED_TURN = settings.robot_turn_speed
 
 class AutoDrive(SingletonConfigurable):
     config = traitlets.Instance(TrainingConfig, default_value=settings.default_model).tag(config=True)
+    drivetrain = traitlets.Instance(Drivetrain)
+    running = traitlets.Bool(default_value=False)
 
     def __init__(self, *args, **kwargs):
         super(AutoDrive, self).__init__(*args, **kwargs)
+        self.drivetrain = Drivetrain.instance()
+        self.direction = 0
         self.mean = 255.0 * np.array([0.485, 0.456, 0.406])
         self.stdev = 255.0 * np.array([0.229, 0.224, 0.225])
         self.normalize = torchvision.transforms.Normalize(self.mean, self.stdev)
@@ -75,3 +80,30 @@ class AutoDrive(SingletonConfigurable):
         output = self.model(input)
         output = F.softmax(output, dim=1)
         return output
+
+    def drive(self, change):
+        if not self.running:
+            self.direction = 0
+            return
+
+        y = self.predict(change['new'])
+
+        forward = float(y.flatten()[0])
+        left = float(y.flatten()[1])
+        right = float(y.flatten()[2])
+
+        print(f"f: {forward}, l: {left}, r: {right}")
+
+        if (left + right) < 0.5:
+            self.direction = 0
+        elif (left > right and self.direction == 0):
+            self.direction = -1
+        elif self.direction == 0:
+            self.direction = 1
+
+        if self.direction == 0:
+            self.drivetrain.forward(0.65)
+        elif self.direction == -1:
+            self.drivetrain.left(0.65)
+        else:
+            self.drivetrain.right(0.65)
