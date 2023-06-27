@@ -9,13 +9,13 @@ model = "ssd-mobilenet-v2"
 threshold = 0.5
 
 # Load Detectnet
-if settings.use_detctnet:
+if settings.use_detectnet:
     net = detectNet(model, sys.argv, threshold)
 
 
 def detect(img: cudaImage):
     try:
-        if settings.use_detctnet:
+        if settings.use_detectnet:
             img2 = cudaMemcpy(img)
             detections = net.Detect(img2, overlay=settings.detectnet_overlay)
             print("detected {:d} objects in image".format(len(detections)))

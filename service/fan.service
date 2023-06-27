@@ -1,0 +1,11 @@
+[Unit]
+Description=Fan.
+After=multi-user.target
+ 
+[Service]
+Type=simple
+User=root
+ExecStart=/home/nano/nano-ml/start-fan.sh
+
+[Install]
+WantedBy=multi-user.target

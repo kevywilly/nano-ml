@@ -13,13 +13,14 @@ class TrainingConfig(BaseModel):
     model_name: str
     categories: List[str]
     model: Optional[Any]
+    num_cameras: int = 1
 
-    def get_best_model_path(self):
-        return f"{BEST_MODELS_ROOT}/{self.name}.pth"
+    def get_best_model_path(self, cam_index=1):
+        return f"{BEST_MODELS_ROOT}/{self.name}_{cam_index}.pth"
 
-    def get_data_path(self):
-        return f"{DATASETS_ROOT}/{self.name}"
-
+    def get_data_path(self, cam_index=1):
+        return f"{DATASETS_ROOT}/{self.name}_{cam_index}"
+    
     def num_categories(self):
         return len(self.categories)
 
@@ -39,7 +40,8 @@ Obstacle3dConfig = TrainingConfig(
 Obstacle3dV2Config = TrainingConfig(
     name="obstacle3dV2",
     model_name="alexnet",
-    categories=["turn_left", "turn_right", "forward"]
+    categories=["turn_left", "turn_right", "forward"],
+    num_cameras=2
 )
 
 Obstacle2dConfig: TrainingConfig = TrainingConfig(
@@ -63,5 +65,6 @@ Obstacle5dConfig = TrainingConfig(
 MecanumConfig = TrainingConfig(
     name="mecanum",
     model_name="alexnet",
-    categories=["forward", "slide_left", "slide_right", "turn_left", "turn_right"]
+    categories=["forward", "slide_left", "slide_right", "turn_left", "turn_right"],
+    num_cameras=2
 )

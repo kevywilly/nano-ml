@@ -40,7 +40,7 @@ class AppSettings(BaseSettings):
 
     # Training Settings
 
-    default_model: TrainingConfig = Obstacle3dV2Config
+    default_model: TrainingConfig = Obstacle3dV2Config 
     retrain_model: bool = True
     default_epochs: int = 60
     default_retrain_epochs: int = 10
@@ -53,10 +53,11 @@ class AppSettings(BaseSettings):
     cam_fps: float = 30
     cam_capture_width: int = 1280
     cam_capture_height:int = 720
+    cam_stereo: bool = True
 
     # Detectnet Settings
     
-    use_detctnet: bool = False
+    use_detectnet: bool = False 
     detectnet_overlay: str = "box,labels,conf"
     detect_net_model: str = "ssd-mobilenet-v2"
     detect_net_threshold: float = 0.5

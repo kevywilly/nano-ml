@@ -18,7 +18,7 @@ class Robot(SingletonConfigurable):
     drivetrain = traitlets.Instance(Drivetrain)
     input = traitlets.Instance(Camera)
     collector = traitlets.Instance(ImageCollector)
-    stereo = traitlets.Bool(default_value=False, config=True)
+    stereo = traitlets.Bool(default_value=True, config=True)
     autodrive = traitlets.Instance(AutoDrive)
     logger = traitlets.Instance(Display)
     image1 = traitlets.Instance(Image)
@@ -49,14 +49,13 @@ class Robot(SingletonConfigurable):
         # start input 1
         self.log("starting camera 1...")
         self.image1 = Image()
-        self.input = Camera.instance(stereo=self.stereo)
+        self.image2 = Image()
+        self.input = Camera.instance()
         self.input.read()
         self.input.running = True
 
-        traitlets.dlink((self.input, 'value1'), (self.image1, 'value'), transform=detect)
-        
-        if self.stereo:
-            traitlets.dlink((self.input, 'value2'), (self.image2, 'value'), transform=cuda_to_jpeg)
+        traitlets.dlink((self.input, 'value1'), (self.image1, 'value'), transform=cuda_to_jpeg)
+        traitlets.dlink((self.input, 'value2'), (self.image2, 'value'), transform=detect)
 
         self.autodrive.observe(self._on_autodrive_change, 'running')
 
@@ -65,12 +64,11 @@ class Robot(SingletonConfigurable):
         self.log("...robot started.")
 
 
-    def get_image1(self):
-        return self.image1.value if self.image1 else None
-    
-
-    def get_image2(self):
-        return self.image2.value if self.image2 else None
+    def get_image(self, index: int):
+        if index == 1:
+            return self.image1.value if self.image1 else None
+        else:
+            return self.image2.value if self.image2 else None
 
         
     def _on_autodrive_change(self, change):

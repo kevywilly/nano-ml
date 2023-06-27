@@ -24,7 +24,7 @@ class AutoDrive(SingletonConfigurable):
     def __init__(self, *args, **kwargs):
         super(AutoDrive, self).__init__(*args, **kwargs)
         self.drivetrain = Drivetrain.instance()
-        self.direction = 0
+        self.direction: float = 0.0
         self.mean = 255.0 * np.array([0.485, 0.456, 0.406])
         self.stdev = 255.0 * np.array([0.229, 0.224, 0.225])
         self.normalize = torchvision.transforms.Normalize(self.mean, self.stdev)
@@ -37,6 +37,7 @@ class AutoDrive(SingletonConfigurable):
     def _load_model(self):
         print("preparing model...")
 
+        print(self.config.get_best_model_path())
         has_model = os.path.isfile(self.config.get_best_model_path())
 
         self.model = self.config.load_model(pretrained=(not has_model))
@@ -75,29 +76,41 @@ class AutoDrive(SingletonConfigurable):
         output = F.softmax(output, dim=1)
         return output
 
+    def _assign_predictions(self, y, categories):
+        categories = sorted(settings.default_model.categories.copy())
+        d = {}
+        for index, cat in enumerate(categories):
+            d[cat] = float(y.flatten()[index])
+        predictions = sorted(d.items(),key=lambda x:x[1], reverse=True)
+        return predictions
+
     def drive(self, change):
         if not self.running:
             self.direction = 0
             return
 
         y = self.predict(change['new'])
+        
+        predictions = self._assign_predictions(y, settings.default_model.categories)
 
-        forward = float(y.flatten()[0])
-        left = float(y.flatten()[1])
-        right = float(y.flatten()[2])
 
-        print(f"f: {forward}, l: {left}, r: {right}")
+        k,v = predictions[0]
 
-        if (left + right) < 0.5:
+        print(f"prediction: {k}, direction: {self.direction}")
+        
+        if k == "forward":
             self.direction = 0
-        elif (left > right and self.direction == 0):
-            self.direction = -1
-        elif self.direction == 0:
-            self.direction = 1
-
-        if self.direction == 0:
             self.drivetrain.forward(settings.robot_drive_speed)
-        elif self.direction == -1:
-            self.drivetrain.left(settings.robot_turn_speed)
-        else:
-            self.drivetrain.right(settings.robot_turn_speed)
+        elif k == "slide_left" and self.direction == 0:
+            self.direction = -0.5
+            self.drivetrain.slide_left(settings.robot_drive_speed)
+        elif k == "slide_right" and self.direction == 0:
+            self.direction = 0.5
+            self.drivetrain.slide_right(settings.robot_drive_speed)
+        elif k == "turn_left" and self.direction == 0:
+            self.direction = -1
+            self.drivetrain.left(settings.robot_drive_speed)
+        elif k == "turn_right" and self.direction == 0:
+            self.direction = 1
+            self.drivetrain.right(settings.robot_drive_speed)
+

@@ -6,6 +6,7 @@ from settings import settings
 from src.robot import Robot
 from src.utils import cuda_to_jpeg
 from src.image import Image
+from settings import settings
 
 app = Flask(__name__)
 CORS(app)
@@ -21,15 +22,15 @@ app.robot: Robot = Robot.instance(stereo=False)
 app.dir = 0
 app.speed = settings.robot_drive_speed
 app.turn_speed = settings.robot_turn_speed
+app.num_cameras = settings.default_model.num_cameras
 
-
-def _get_stream(img: str = "right"):
+def _get_stream(index: int = 1):
     while True:
         # ret, buffer = cv2.imencode('.jpg', frame)
         try:
             yield (
                     b'--frame\r\n'
-                    b'Content-Type: image/jpeg\r\n\r\n' + app.robot.get_image1() + b'\r\n'
+                    b'Content-Type: image/jpeg\r\n\r\n' + app.robot.get_image(index) + b'\r\n'
             )  # concat frame one by one and show result
         except Exception as ex:
             pass
@@ -64,17 +65,17 @@ def category_images(category: str):
 
 @app.get('/api/categories/<category>/images/<name>')
 def get_image(category, name):
-    bytes_str = app.robot.collector.load_image(category, name)
+    bytes_str = app.robot.collector.load_image(category, name, 1)
     response = flask.make_response(bytes_str)
     response.headers.set('Content-Type', 'image/jpeg')
     return response
 
-
-@app.put('/api/categories/<category>/images/<name>/<category2>')
-def move_image(category, name, category2):
-    resp = app.robot.collector.move_image(category, name, category2)
-    return {"status": resp}
-
+@app.get('/api/categories/<category>/images/<name>/<cam_index>')
+def get_image2(category, name, cam_index):
+    bytes_str = app.robot.collector.load_image(category, name, int(cam_index))
+    response = flask.make_response(bytes_str)
+    response.headers.set('Content-Type', 'image/jpeg')
+    return response
 
 @app.delete('/api/categories/<category>/images/<name>')
 def delete_image(category, name):
@@ -85,12 +86,19 @@ def delete_image(category, name):
 @app.post('/api/categories/<category>/collect')
 def collect(category):
     try:
-        image = Image()
-        image.value = cuda_to_jpeg(app.robot.input.value1)
-        if image.value:
-            return {category: app.robot.collector.collect(category, image)}
-        else:
-            return {category: -1}
+        image1 = Image()
+        image1.value = cuda_to_jpeg(app.robot.input.value1)
+        images = [image1]
+        if app.num_cameras > 1:
+            image2 = Image()
+            image2.value = cuda_to_jpeg(app.robot.input.value2)
+            images.append(image2)
+        for image in images:
+            if not image.value:
+                return {category: -1}
+        
+        return {category: app.robot.collector.collect(category, images)}
+        
     except Exception as ex:
         print(ex)
         return {category: -1}
@@ -101,9 +109,11 @@ def stream():
     return Response(_get_stream(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
-@app.route('/api/stream/<img>')
-def stream_camera(img: str):
-    return Response(_get_stream(img), mimetype='multipart/x-mixed-replace; boundary=frame')
+@app.route('/api/stream/<input>')
+def stream_camera(input: str):
+    print(f"Got Stream Request for {input}")
+    index = 1 if input == "input1" else 2
+    return Response(_get_stream(index), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
 @app.route('/api/drive/<cmd>/<speed>')

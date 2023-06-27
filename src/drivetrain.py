@@ -119,9 +119,9 @@ class Drivetrain(SingletonConfigurable):
             self.backward_right(s)
         elif cmd == "backward_left":
             self.backward_left(s)
-        elif cmd == "left":
+        elif cmd == "left" or cmd == "turn_left":
             self.left(s)
-        elif cmd == "right":
+        elif cmd == "right" or cmd == "turn_right":
             self.right(s)
         elif cmd == "slide_left":
             self.slide_left(s)
