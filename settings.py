@@ -5,12 +5,9 @@ from src.config import TrainingConfig
 
 
 from src.config import (
-    Obstacle2dConfig, 
-    Obstacle3dConfig, 
-    Navigate2dConfig, 
     Obstacle3dV2Config, 
-    Obstacle5dConfig,
-    MecanumConfig
+    MecanumConfig,
+    Navigate5d
 )
 
 class CalibrationSettings(BaseSettings):
@@ -35,14 +32,14 @@ class AppSettings(BaseSettings):
     m3_alpha: float = 1.0
     m4_alpha: float = 1.0
 
-    robot_drive_speed: float = 0.65
-    robot_turn_speed: float = 0.65
+    robot_drive_speed: float = 0.50
+    robot_turn_speed: float = 0.50
 
     # Training Settings
 
     default_model: TrainingConfig = Obstacle3dV2Config 
     retrain_model: bool = True
-    default_epochs: int = 60
+    default_epochs: int = 30
     default_retrain_epochs: int = 10
     led_pins: List[int] = [200,38]
 
@@ -53,7 +50,7 @@ class AppSettings(BaseSettings):
     cam_fps: float = 30
     cam_capture_width: int = 1280
     cam_capture_height:int = 720
-    cam_stereo: bool = True
+    cam_stereo: bool = False
 
     # Detectnet Settings
     

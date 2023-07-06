@@ -34,13 +34,13 @@ class TrainingConfig(BaseModel):
 Obstacle3dConfig = TrainingConfig(
     name="obstacle3d",
     model_name="alexnet",
-    categories=["turn_left", "turn_right", "forward"]
+    categories=["left", "right", "forward"]
 )
 
 Obstacle3dV2Config = TrainingConfig(
     name="obstacle3dV2",
     model_name="alexnet",
-    categories=["turn_left", "turn_right", "forward"],
+    categories=["left", "right", "forward"],
     num_cameras=2
 )
 
@@ -53,18 +53,18 @@ Obstacle2dConfig: TrainingConfig = TrainingConfig(
 Navigate2dConfig: TrainingConfig = TrainingConfig(
     name="navigate2d",
     model_name="alexnet",
-    categories=["turn_left", "turn_right"]
+    categories=["left", "right"]
 )
 
-Obstacle5dConfig = TrainingConfig(
+Navigate5d = TrainingConfig(
     name="obstacle5d",
     model_name="alexnet",
-    categories=["forward", "slide_left", "slide_right", "turn_left", "turn_right"]
+    categories=["forward", "dleft", "dright", "left", "right"]
 )
 
 MecanumConfig = TrainingConfig(
     name="mecanum",
     model_name="alexnet",
-    categories=["forward", "slide_left", "slide_right", "turn_left", "turn_right"],
+    categories=["forward", "left", "right", "left", "right"],
     num_cameras=2
 )

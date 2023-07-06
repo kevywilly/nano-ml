@@ -101,16 +101,23 @@ class AutoDrive(SingletonConfigurable):
         if k == "forward":
             self.direction = 0
             self.drivetrain.forward(settings.robot_drive_speed)
-        elif k == "slide_left" and self.direction == 0:
-            self.direction = -0.5
-            self.drivetrain.slide_left(settings.robot_drive_speed)
-        elif k == "slide_right" and self.direction == 0:
-            self.direction = 0.5
-            self.drivetrain.slide_right(settings.robot_drive_speed)
-        elif k == "turn_left" and self.direction == 0:
-            self.direction = -1
-            self.drivetrain.left(settings.robot_drive_speed)
-        elif k == "turn_right" and self.direction == 0:
-            self.direction = 1
-            self.drivetrain.right(settings.robot_drive_speed)
+        elif self.direction == 0:
+            if k == "dleft":
+                self.direction = -0.75
+                self.drivetrain.forward_left(settings.robot_drive_speed)
+            elif k == "dright":
+                self.direction = 0.75
+                self.drivetrain.forward_right(settings.robot_drive_speed)
+            elif k == "sleft":
+                self.direction = -0.5
+                self.drivetrain.slide_left(settings.robot_drive_speed)
+            elif k == "sright":
+                self.direction = 0.5
+                self.drivetrain.slide_right(settings.robot_drive_speed)
+            elif k == "left":
+                self.direction = -1
+                self.drivetrain.left(settings.robot_drive_speed)
+            elif k == "right":
+                self.direction = 1
+                self.drivetrain.right(settings.robot_drive_speed)
 

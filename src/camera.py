@@ -24,7 +24,8 @@ class Camera(SingletonConfigurable):
 
         super(Camera, self).__init__(*args, **kwargs)
         self.input1 = videoSource(self.source1, argv=['--input-flip=rotate-180'])
-        self.input2 = videoSource(self.source2, argv=['--input-flip=rotate-180'])
+        if self.stereo:
+            self.input2 = videoSource(self.source2, argv=['--input-flip=rotate-180'])
 
         self._running = False
         atexit.register(self._close)
@@ -34,17 +35,18 @@ class Camera(SingletonConfigurable):
         img1 = self.input1.Capture()
         if img1 is not None:
             self.value1 = img1
+            if not self.stereo:
+                self.value2 = cudaMemcpy(img1)
         else:
             print("invalid capture for input 1")
             return
 
-        
-        img2 = self.input2.Capture()
-        if img2 is not None:
-            self.value2 = img2
-        else:
-            print("invalid capture for input 2")
-
+        if self.stereo:
+            img2 = self.input2.Capture()
+            if img2 is not None:
+                self.value2 = img2
+            else:
+                print("invalid capture for input 2")
 
 
     def read(self):
