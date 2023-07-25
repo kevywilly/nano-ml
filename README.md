@@ -13,6 +13,6 @@ https://developer.nvidia.com/blog/accelerating-inference-up-to-6x-faster-in-pyto
 # must disable NVMM
 cd jetson-inference/build
 cmake -DENABLE_NVMM=off ../
-make
+make -j$(nproc)
 sudo make install
 ```
